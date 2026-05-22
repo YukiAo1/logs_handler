@@ -56,6 +56,74 @@ html, body {
   gap: 6px;
 }
 
+#filterBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 16px;
+  background: rgba(22, 33, 62, 0.5);
+  border-bottom: 1px solid var(--border);
+  min-height: 36px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-label {
+  font-size: 11px;
+  color: var(--text2);
+  white-space: nowrap;
+}
+
+.filter-sep {
+  color: var(--text2);
+  margin: 0 2px;
+}
+
+.level-check {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text2);
+  padding: 2px 4px;
+  border-radius: 3px;
+  user-select: none;
+}
+
+.level-check input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.level-check:has(input:checked) {
+  color: var(--text);
+}
+
+.filter-input {
+  padding: 3px 6px;
+  border: 1px solid var(--input-border);
+  border-radius: 3px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 11px;
+  font-family: Consolas, monospace;
+  outline: none;
+}
+
+.filter-input:focus {
+  border-color: var(--accent);
+}
+
+.filter-time { width: 140px; }
+.filter-short { width: 60px; }
+.filter-tag { width: 120px; }
+
 .toolbar-info {
   color: var(--text2);
   font-size: 12px;

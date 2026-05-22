@@ -5,6 +5,7 @@ const Files = {
       const result = await API.post('/api/files/open', { paths });
       App.state.files = result.files;
       this.renderFileList(result);
+      document.getElementById('filterBar').style.display = result.files.length ? '' : 'none';
       App.setStatus(`已加载 ${result.total_files} 个文件, 共 ${result.total_lines.toLocaleString()} 行`);
       showToast(`加载完成: ${result.total_files} 个文件`, 'success');
       return result;

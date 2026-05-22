@@ -44,11 +44,13 @@ const App = {
   showWelcome() {
     document.getElementById('welcome').style.display = '';
     document.getElementById('searchResult').style.display = 'none';
+    document.getElementById('filterBar').style.display = App.state.files.length ? '' : 'none';
   },
 
   showResults() {
     document.getElementById('welcome').style.display = 'none';
     document.getElementById('searchResult').style.display = '';
+    document.getElementById('filterBar').style.display = App.state.files.length ? '' : 'none';
   },
 
   setStatus(text) {

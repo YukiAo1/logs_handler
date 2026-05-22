@@ -19,6 +19,41 @@
     </div>
   </header>
 
+  <div id="filterBar" style="display:none">
+    <div class="filter-group">
+      <span class="filter-label">级别:</span>
+      <label class="level-check"><input type="checkbox" value="V" onchange="Search.onFilterChange()">V</label>
+      <label class="level-check"><input type="checkbox" value="D" onchange="Search.onFilterChange()">D</label>
+      <label class="level-check"><input type="checkbox" value="I" onchange="Search.onFilterChange()" checked>I</label>
+      <label class="level-check"><input type="checkbox" value="W" onchange="Search.onFilterChange()" checked>W</label>
+      <label class="level-check"><input type="checkbox" value="E" onchange="Search.onFilterChange()" checked>E</label>
+      <label class="level-check"><input type="checkbox" value="F" onchange="Search.onFilterChange()" checked>F</label>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">时间:</span>
+      <input type="text" id="filterTimeStart" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" onchange="Search.onFilterChange()">
+      <span class="filter-sep">~</span>
+      <input type="text" id="filterTimeEnd" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" onchange="Search.onFilterChange()">
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">PID:</span>
+      <input type="text" id="filterPid" class="filter-input filter-short" placeholder="PID" onchange="Search.onFilterChange()">
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">TID:</span>
+      <input type="text" id="filterTid" class="filter-input filter-short" placeholder="TID" onchange="Search.onFilterChange()">
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Tag:</span>
+      <input type="text" id="filterTag" class="filter-input filter-tag" placeholder="模糊匹配" onchange="Search.onFilterChange()">
+    </div>
+    <div class="filter-group">
+      <input type="text" id="filterKeyword" class="filter-input filter-tag" placeholder="临时关键字/正则" onkeydown="if(event.key==='Enter')Search.onFilterChange()">
+    </div>
+    <button class="btn btn-primary" onclick="Search.onFilterChange()">🔍 搜索</button>
+    <button class="btn" onclick="Search.clearFilters()">✕ 清除</button>
+  </div>
+
   <div id="mainLayout">
     <aside id="rulePanel">
       <div class="panel-header">
@@ -45,7 +80,7 @@
       </div>
       <div id="searchResult" style="display:none">
         <div class="result-stats" id="resultStats"></div>
-        <div class="table-wrapper">
+        <div class="table-wrapper" id="tableWrapper">
           <table id="logTable">
             <thead>
               <tr>
@@ -80,6 +115,8 @@
 
 <script src="/static/js/api.js"></script>
 <script src="/static/js/app.js"></script>
+<script src="/static/js/table.js"></script>
+<script src="/static/js/search.js"></script>
 <script src="/static/js/rules.js"></script>
 <script src="/static/js/files.js"></script>
 </body>

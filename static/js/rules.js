@@ -34,9 +34,11 @@ const Rules = {
       el.addEventListener('click', (e) => {
         if (e.target.closest('[data-action]')) return;
         const id = parseInt(el.dataset.id);
-        App.state.activeRuleId = id;
+        App.state.activeRuleId = (App.state.activeRuleId === id) ? null : id;
         this.render();
-        showToast('点击规则将触发筛选（阶段三实现）', 'info');
+        if (App.state.activeRuleId) {
+          Search.onFilterChange();
+        }
       });
     });
 
