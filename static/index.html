@@ -11,7 +11,12 @@
 <div id="app">
   <header id="toolbar">
     <span class="logo">🔍 鸿蒙日志分析工具</span>
-    <span class="toolbar-info" id="fileStatus">未加载日志文件</span>
+    <div class="toolbar-actions">
+      <button class="btn btn-primary" onclick="Files.showFilePicker()">📂 选择文件</button>
+      <button class="btn" onclick="Files.unloadAll()" title="卸载全部文件">🗑 卸载</button>
+      <input type="file" id="filePickerInput" multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
+      <input type="file" id="folderPickerInput" webkitdirectory multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
+    </div>
   </header>
 
   <div id="mainLayout">
@@ -31,8 +36,12 @@
 
     <main id="content">
       <div id="welcome">
-        <h2>欢迎使用鸿蒙日志分析工具</h2>
-        <p>请先加载日志文件，然后创建筛选规则开始分析</p>
+        <div class="drop-zone" id="dropZone">
+          <h2>📂 拖拽日志文件或文件夹到此处</h2>
+          <p>支持 .log / .txt 格式，可同时加载多个文件</p>
+          <button class="btn btn-primary" onclick="Files.showFilePicker()" style="margin-top:12px">选择文件</button>
+        </div>
+        <div class="file-list" id="fileList"></div>
       </div>
       <div id="searchResult" style="display:none">
         <div class="result-stats" id="resultStats"></div>
@@ -72,5 +81,6 @@
 <script src="/static/js/api.js"></script>
 <script src="/static/js/app.js"></script>
 <script src="/static/js/rules.js"></script>
+<script src="/static/js/files.js"></script>
 </body>
 </html>

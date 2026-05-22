@@ -7,6 +7,38 @@ const App = {
 
   init() {
     Rules.loadRules();
+    this.setupDropZone();
+  },
+
+  setupDropZone() {
+    const dropZone = document.getElementById('dropZone');
+    if (!dropZone) return;
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('drag-over');
+      Files.handleDrop(e);
+    });
+
+    document.body.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+    document.body.addEventListener('drop', (e) => {
+      e.preventDefault();
+    });
   },
 
   showWelcome() {
