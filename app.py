@@ -8,6 +8,8 @@ from storage.database import init_db
 from api.rules import router as rules_router
 from api.files import router as files_router
 from api.search import router as search_router
+from api.compare import router as compare_router
+from api.export import router as export_router
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 
@@ -27,6 +29,8 @@ def create_app() -> FastAPI:
     app.include_router(rules_router)
     app.include_router(files_router)
     app.include_router(search_router)
+    app.include_router(compare_router)
+    app.include_router(export_router)
 
     if os.path.isdir(STATIC_DIR):
         app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')

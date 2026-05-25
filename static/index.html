@@ -13,6 +13,8 @@
     <span class="logo">🔍 鸿蒙日志分析工具</span>
     <div class="toolbar-actions">
       <button class="btn btn-primary" onclick="Files.showFilePicker()">📂 选择文件</button>
+      <button class="btn" onclick="Export.showExportDialog()" title="导出筛选结果">📤 导出</button>
+      <button class="btn" onclick="Compare.showCompareView()" title="对比两份日志">📊 对比</button>
       <button class="btn" onclick="Files.unloadAll()" title="卸载全部文件">🗑 卸载</button>
       <input type="file" id="filePickerInput" multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
       <input type="file" id="folderPickerInput" webkitdirectory multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
@@ -99,6 +101,13 @@
         </div>
         <div class="pagination" id="pagination"></div>
       </div>
+      <div id="compareView" style="display:none">
+        <div class="compare-header">
+          <button class="btn btn-sm" onclick="Compare.hideCompareView()">← 返回</button>
+          <span>日志对比</span>
+        </div>
+        <div class="compare-content" id="compareContent"></div>
+      </div>
     </main>
   </div>
 
@@ -119,5 +128,7 @@
 <script src="/static/js/search.js"></script>
 <script src="/static/js/rules.js"></script>
 <script src="/static/js/files.js"></script>
+<script src="/static/js/export.js"></script>
+<script src="/static/js/compare.js"></script>
 </body>
 </html>
