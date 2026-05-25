@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from storage.database import get_db
 from api.files import _file_indexes
 from engine.filter_engine import search as search_engine
-from config import EXPORT_DIR
+from config import EXPORT_DIR, MAX_EXPORT_LINES
 
 router = APIRouter(prefix='/api/export', tags=['export'])
 
@@ -59,7 +59,7 @@ def export_logs(body: ExportRequest):
     all_items = []
     batch_size = 5000
     offset = 0
-    while True:
+    while len(all_items) < MAX_EXPORT_LINES:
         items, total = search_engine(
             indexes,
             rule_pattern=rule_pattern,
@@ -78,7 +78,10 @@ def export_logs(body: ExportRequest):
             break
         offset += batch_size
 
+    truncated = len(all_items) >= MAX_EXPORT_LINES
     fmt = body.format.lower()
+    if fmt not in ('txt', 'json'):
+        raise HTTPException(status_code=400, detail='格式仅支持 txt 或 json')
 
     if fmt == 'json':
         import json
@@ -100,6 +103,7 @@ def export_logs(body: ExportRequest):
     return {
         'ok': True,
         'total_matches': len(all_items),
+        'truncated': truncated,
         'filename': filename,
         'filepath': filepath,
     }

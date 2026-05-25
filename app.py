@@ -5,13 +5,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from storage.database import init_db
+from config import STATIC_DIR
 from api.rules import router as rules_router
 from api.files import router as files_router
 from api.search import router as search_router
 from api.compare import router as compare_router
 from api.export import router as export_router
-
-STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 
 
 def create_app() -> FastAPI:

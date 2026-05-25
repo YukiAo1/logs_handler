@@ -57,8 +57,11 @@ def open_files(body: OpenRequest):
         if p in _file_indexes:
             idx = _file_indexes[p]
         else:
-            idx = index_file(p)
-            _file_indexes[p] = idx
+            try:
+                idx = index_file(p)
+                _file_indexes[p] = idx
+            except (OSError, ValueError, UnicodeError) as e:
+                continue
         results.append({
             'path': idx.path,
             'file_size': idx.file_size,
@@ -68,6 +71,9 @@ def open_files(body: OpenRequest):
         })
 
     _save_recent(resolved)
+
+    if not results:
+        raise HTTPException(status_code=400, detail='文件加载失败，请检查文件是否可读')
 
     return {
         'files': results,
