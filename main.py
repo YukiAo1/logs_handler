@@ -3,11 +3,10 @@ import os
 import webbrowser
 import threading
 import time
-import socket
 
 import uvicorn
 
-from config import HOST, PORT, APP_DIR, EXPORT_DIR
+from config import HOST, PORT, EXPORT_DIR
 from app import create_app
 
 
@@ -31,10 +30,6 @@ def open_browser():
 def main():
     ensure_export_dir()
     app = create_app()
-
-    if is_frozen():
-        import multiprocessing
-        multiprocessing.freeze_support()
 
     threading.Thread(target=open_browser, daemon=True).start()
 
