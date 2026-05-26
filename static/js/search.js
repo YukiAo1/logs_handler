@@ -41,6 +41,12 @@ const Search = {
     this.doSearch();
   },
 
+  changePageSize(limit) {
+    this.state.limit = parseInt(limit);
+    this.state.offset = 0;
+    this.doSearch();
+  },
+
   clearFilters() {
     document.querySelectorAll('#filterBar .level-check input').forEach(cb => {
       cb.checked = ['I', 'W', 'E'].includes(cb.value);

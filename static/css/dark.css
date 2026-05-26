@@ -365,6 +365,40 @@ th:hover .resize-handle {
   color: var(--text2);
 }
 
+.pagination .pagination-inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.pagination .page-size-select {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.pagination .page-size-select select {
+  background: var(--panel);
+  color: var(--text1);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.pagination .page-size-select select:hover {
+  border-color: var(--accent1);
+}
+
+.pagination .page-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .pagination button {
   min-width: 32px;
 }

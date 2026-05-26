@@ -66,14 +66,14 @@ def search_logs(
         time_end=time_end,
         keyword=keyword,
         offset=offset,
-        limit=min(limit, 1000),
+        limit=min(limit, 2000),
     )
 
     return {
         'items': items,
         'total_matches': total,
         'offset': offset,
-        'limit': min(limit, 1000),
+        'limit': min(limit, 2000),
     }
 
 

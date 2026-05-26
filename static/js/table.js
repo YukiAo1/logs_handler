@@ -51,13 +51,25 @@ const Table = {
     }
     const currentPage = Math.floor(offset / limit) + 1;
     const totalPages = Math.max(1, Math.ceil(total / limit));
+    const sizes = [500, 1000, 2000];
 
     el.innerHTML = `
-      <button class="btn btn-sm" ${offset === 0 ? 'disabled' : ''} onclick="Search.goPage(0)">◀◀</button>
-      <button class="btn btn-sm" ${offset === 0 ? 'disabled' : ''} onclick="Search.goPage(${Math.max(0, offset - limit)})">◀</button>
-      <span>第 ${currentPage}/${totalPages} 页 (共 ${total.toLocaleString()} 条)</span>
-      <button class="btn btn-sm" ${offset + limit >= total ? 'disabled' : ''} onclick="Search.goPage(${offset + limit})">▶</button>
-      <button class="btn btn-sm" ${offset + limit >= total ? 'disabled' : ''} onclick="Search.goPage(${Math.floor((totalPages - 1) * limit)})">▶▶</button>
+      <div class="pagination-inner">
+        <span class="page-size-select">
+          <label>每页</label>
+          <select onchange="Search.changePageSize(this.value)">
+            ${sizes.map(s => `<option value="${s}"${s === limit ? ' selected' : ''}>${s.toLocaleString()}</option>`).join('')}
+          </select>
+          <label>条</label>
+        </span>
+        <span class="page-nav">
+          <button class="btn btn-sm" ${offset === 0 ? 'disabled' : ''} onclick="Search.goPage(0)">◀◀</button>
+          <button class="btn btn-sm" ${offset === 0 ? 'disabled' : ''} onclick="Search.goPage(${Math.max(0, offset - limit)})">◀</button>
+          <span>第 ${currentPage}/${totalPages} 页 (共 ${total.toLocaleString()} 条)</span>
+          <button class="btn btn-sm" ${offset + limit >= total ? 'disabled' : ''} onclick="Search.goPage(${offset + limit})">▶</button>
+          <button class="btn btn-sm" ${offset + limit >= total ? 'disabled' : ''} onclick="Search.goPage(${Math.floor((totalPages - 1) * limit)})">▶▶</button>
+        </span>
+      </div>
     `;
   },
 
