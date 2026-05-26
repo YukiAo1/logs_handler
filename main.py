@@ -70,45 +70,46 @@ def wait_port_free(port, timeout=3):
     return False
 
 
+def check_and_free_port(host, port):
+    """检查端口是否可用，被占用则自动杀掉占用进程"""
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            pass
+    except (ConnectionRefusedError, OSError):
+        return True
+
+    print(f'端口 {port} 已被占用，正在自动清理...')
+    pid = find_pid_by_port(port)
+    if pid:
+        print(f'占用进程 PID: {pid}，正在结束...')
+        if kill_process(pid):
+            print('进程已结束')
+            if wait_port_free(port):
+                print('端口已释放')
+                return True
+            else:
+                print('端口释放超时')
+                return False
+        else:
+            print('结束进程失败，请尝试以管理员身份运行')
+            return False
+    else:
+        print('未找到占用端口的进程')
+        return False
+
+
 def main():
     ensure_export_dir()
+
+    check_and_free_port(HOST, PORT)
+
     app = create_app()
 
-    try:
-        threading.Thread(target=open_browser, daemon=True).start()
+    threading.Thread(target=open_browser, daemon=True).start()
 
-        print(f'鸿蒙日志分析工具已启动: http://{HOST}:{PORT}')
-        print('按 Ctrl+C 退出')
-        uvicorn.run(app, host=HOST, port=PORT, log_level='warning')
-    except OSError as e:
-        if e.winerror == 10048 or '10048' in str(e):
-            print(f'\n端口 {PORT} 已被占用，无法启动。')
-            pid = find_pid_by_port(PORT)
-            if pid:
-                print(f'占用端口进程 PID: {pid}')
-            choice = input('是否清理占用进程并重新启动？(y/N): ').strip().lower()
-            if choice in ('y', 'yes'):
-                if pid:
-                    print(f'正在结束进程 {pid}...')
-                    if kill_process(pid):
-                        print('进程已结束')
-                        if wait_port_free(PORT):
-                            print('端口已释放，重新启动...\n')
-                            threading.Thread(target=open_browser, daemon=True).start()
-                            print(f'鸿蒙日志分析工具已启动: http://{HOST}:{PORT}')
-                            print('按 Ctrl+C 退出')
-                            uvicorn.run(app, host=HOST, port=PORT, log_level='warning')
-                        else:
-                            print('端口释放超时，请稍后重试')
-                    else:
-                        print('结束进程失败，请尝试以管理员身份运行')
-                else:
-                    print('未找到占用端口的进程，请手动检查')
-            else:
-                print('已取消启动')
-        else:
-            print(f'启动失败: {e}')
-        input('\n按 Enter 键退出...')
+    print(f'鸿蒙日志分析工具已启动: http://{HOST}:{PORT}')
+    print('按 Ctrl+C 退出')
+    uvicorn.run(app, host=HOST, port=PORT, log_level='warning')
 
 
 if __name__ == '__main__':
