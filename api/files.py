@@ -34,7 +34,7 @@ def _resolve_paths(paths: list[str]) -> list[str]:
                 files.append(p)
         elif os.path.isdir(p):
             for ext in ('*.log', '*.txt'):
-                for f in glob_module.glob(os.path.join(p, '**', ext), recursive=True):
+                for f in glob_module.glob(os.path.join(p, ext)):
                     files.append(os.path.normpath(f))
     return sorted(set(files))
 

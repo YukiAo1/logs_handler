@@ -8,6 +8,9 @@ const Files = {
       document.getElementById('filterBar').style.display = result.files.length ? '' : 'none';
       App.setStatus(`已加载 ${result.total_files} 个文件, 共 ${result.total_lines.toLocaleString()} 行`);
       showToast(`加载完成: ${result.total_files} 个文件`, 'success');
+      if (result.files.length > 0) {
+        Search.onFilterChange();
+      }
       return result;
     } catch (e) {
       App.setStatus('加载失败');
@@ -62,6 +65,24 @@ const Files = {
     this.uploadAndLoad(valid);
   },
 
+  handleFolderPick(event) {
+    const allFiles = Array.from(event.target.files || []);
+    if (!allFiles.length) return;
+    // 只取第一层文件：webkitRelativePath 不含路径分隔符
+    const valid = allFiles.filter(f => {
+      if (!f.name || !/\.(log|txt)$/i.test(f.name)) return false;
+      const rel = f.webkitRelativePath || '';
+      // 如果 webkitRelativePath 为空（普通文件选择），也保留
+      // 否则只有不含 '/' 的才是第一层文件
+      return !rel || !rel.includes('/');
+    });
+    if (!valid.length) {
+      showToast('未找到有效的 .log 或 .txt 文件', 'error');
+      return;
+    }
+    this.uploadAndLoad(valid);
+  },
+
   async uploadAndLoad(files) {
     App.setStatus(`正在上传 ${files.length} 个文件...`);
     try {
@@ -71,6 +92,10 @@ const Files = {
       document.getElementById('filterBar').style.display = result.files.length ? '' : 'none';
       App.setStatus(`已加载 ${result.total_files} 个文件, 共 ${result.total_lines.toLocaleString()} 行`);
       showToast(`加载完成: ${result.total_files} 个文件`, 'success');
+      // 文件加载完成后自动执行默认搜索
+      if (result.files.length > 0) {
+        Search.onFilterChange();
+      }
     } catch (e) {
       App.setStatus('加载失败');
       showToast('加载失败: ' + e.message, 'error');
@@ -81,7 +106,11 @@ const Files = {
     const dt = event.dataTransfer;
     const files = Array.from(dt.files || []);
     if (!files.length) return;
-    const valid = files.filter(f => f.name && /\.(log|txt)$/i.test(f.name));
+    const valid = files.filter(f => {
+      if (!f.name || !/\.(log|txt)$/i.test(f.name)) return false;
+      const rel = f.webkitRelativePath || '';
+      return !rel || !rel.includes('/');
+    });
     if (!valid.length) {
       showToast('未找到有效的 .log 或 .txt 文件', 'error');
       return;

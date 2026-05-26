@@ -13,11 +13,12 @@
     <span class="logo">🔍 鸿蒙日志分析工具</span>
     <div class="toolbar-actions">
       <button class="btn btn-primary" onclick="Files.showFilePicker()">📂 选择文件</button>
+      <button class="btn" onclick="Files.showFolderPicker()">📁 选择文件夹</button>
       <button class="btn" onclick="Export.showExportDialog()" title="导出筛选结果">📤 导出</button>
       <button class="btn" onclick="Compare.showCompareView()" title="对比两份日志">📊 对比</button>
       <button class="btn" onclick="Files.unloadAll()" title="卸载全部文件">🗑 卸载</button>
       <input type="file" id="filePickerInput" multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
-      <input type="file" id="folderPickerInput" webkitdirectory multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
+      <input type="file" id="folderPickerInput" webkitdirectory multiple accept=".log,.txt" style="display:none" onchange="Files.handleFolderPick(event)">
     </div>
   </header>
 
@@ -75,6 +76,7 @@
           <h2>📂 拖拽日志文件或文件夹到此处</h2>
           <p>支持 .log / .txt 格式，可同时加载多个文件</p>
           <button class="btn btn-primary" onclick="Files.showFilePicker()" style="margin-top:12px">选择文件</button>
+          <button class="btn" onclick="Files.showFolderPicker()" style="margin-top:12px">选择文件夹</button>
         </div>
         <div class="file-list" id="fileList"></div>
       </div>
