@@ -33,7 +33,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-启动后浏览器自动打开 `http://127.0.0.1:18766`，将 `.log` 或 `.txt` 文件拖入页面即可开始分析。
+启动后浏览器自动打开 `http://127.0.0.1:20306`，将 `.log` 或 `.txt` 文件拖入页面即可开始分析。
 
 ### 打包为 exe（可选）
 
