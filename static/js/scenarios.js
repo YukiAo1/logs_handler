@@ -153,17 +153,26 @@ const Scenarios = {
     return this._matchCache;
   },
 
-  showNoteDialog(scenarioId) {
-    const scenario = this._scenarios.find(s => s.id === scenarioId);
-    if (!scenario) return;
+  showNoteDialog(scenarioIds) {
+    const ids = Array.isArray(scenarioIds) ? scenarioIds : [scenarioIds];
+    const matched = this._scenarios.filter(s => ids.includes(s.id));
+    if (!matched.length) return;
     const overlay = document.getElementById('modalOverlay');
     const box = document.getElementById('modalBox');
+    const items = matched.map(s => `
+      <div class="scenario-note-item">
+        <div class="scenario-note-title">场景：${escapeHtml(s.title)}</div>
+        <div class="scenario-note-body">往期记录：${escapeHtml(s.note)}</div>
+      </div>
+    `).join('');
     box.innerHTML = `
-      <h3>经典场景 - ${escapeHtml(scenario.title)}</h3>
-      <div class="scenario-note-body">${escapeHtml(scenario.note)}</div>
-      <div class="scenario-note-warn">往期结论，仅做参考！</div>
-      <div class="form-actions">
-        <button class="btn" id="modalCancel">关闭</button>
+      <div class="scenario-note-dialog">
+        <h3>经典场景</h3>
+        ${items}
+        <div class="scenario-note-tips">Tips：往期记录结论仅做参考！</div>
+        <div class="form-actions">
+          <button class="btn" id="modalCancel">关闭</button>
+        </div>
       </div>
     `;
     overlay.style.display = '';

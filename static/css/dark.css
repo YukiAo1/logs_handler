@@ -703,34 +703,51 @@ input:focus, textarea:focus, select:focus {
 .scenario-indicator {
   display: inline-block;
   margin-left: 4px;
-  padding: 0 5px;
-  font-size: 12px;
-  line-height: 1.4;
-  border: 1px solid var(--accent1);
-  border-radius: 3px;
-  background: rgba(100, 180, 255, 0.1);
-  color: var(--accent1);
+  font-size: 14px;
+  line-height: 1;
   cursor: pointer;
   user-select: none;
-  opacity: 0.7;
+  opacity: 0.85;
   transition: opacity 0.15s;
+  filter: drop-shadow(0 0 2px rgba(255, 200, 0, 0.3));
 }
 
 .scenario-indicator:hover {
   opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.6));
+}
+
+.scenario-note-dialog h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.scenario-note-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.scenario-note-item:last-of-type {
+  border-bottom: none;
+}
+
+.scenario-note-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent2);
+  margin-bottom: 4px;
 }
 
 .scenario-note-body {
-  padding: 12px 0;
   font-size: 13px;
   line-height: 1.6;
   color: var(--text);
   white-space: pre-wrap;
 }
 
-.scenario-note-warn {
+.scenario-note-tips {
   padding: 8px 12px;
-  margin-bottom: 12px;
+  margin-top: 12px;
   border: 1px solid rgba(255, 80, 80, 0.4);
   border-radius: 4px;
   background: rgba(255, 80, 80, 0.08);

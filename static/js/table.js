@@ -46,8 +46,11 @@ const Table = {
         const target = e.target;
         // 场景指示器点击
         if (target.classList.contains('scenario-indicator')) {
-          const sid = parseInt(target.dataset.scenarioId);
-          if (sid) Scenarios.showNoteDialog(sid);
+          const idsStr = target.dataset.scenarioIds;
+          if (idsStr) {
+            const ids = idsStr.split(',').map(Number).filter(Boolean);
+            if (ids.length) Scenarios.showNoteDialog(ids);
+          }
           return;
         }
         const btn = target.closest('.action-btn');
@@ -129,10 +132,10 @@ const Table = {
         if (matchedIds && matchedIds.length) {
           const msgCell = rows[i].querySelector('.col-msg-cell');
           if (msgCell) {
-            const indicators = matchedIds.map(sid =>
-              `<span class="scenario-indicator" data-scenario-id="${sid}" title="查看往期结论">?</span>`
-            ).join('');
-            msgCell.insertAdjacentHTML('beforeend', indicators);
+            const ids = matchedIds.join(',');
+            msgCell.insertAdjacentHTML('beforeend',
+              `<span class="scenario-indicator" data-scenario-ids="${ids}" title="查看经典场景">💡</span>`
+            );
           }
         }
       }
