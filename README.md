@@ -1,16 +1,18 @@
-# 鸿蒙日志分析工具 v1.0
+# 鸿蒙日志分析工具 v2.0
 
-基于 FastAPI + SQLite 的本地鸿蒙日志分析工具，提供日志加载、多级筛选、双文件对比、结果导出等功能，支持 PyInstaller 打包为独立 exe。
+基于 FastAPI + SQLite 的本地鸿蒙日志分析工具，提供日志加载、多级筛选、经典场景记录、双文件对比、结果导出等功能，支持 PyInstaller 打包为独立 exe。
 
 ## 功能总览
 
 | 模块 | 功能 |
 |------|------|
-| 📂 文件管理 | 拖拽/选择加载 .log/.txt，mmap 行偏移索引，支持大文件 |
+| 📂 文件管理 | 拖拽/选择/文件夹加载 .log/.txt，mmap 行偏移索引，支持大文件 |
+| 🔍 搜索筛选 | 级别/时间/PID/TID/Tag/关键字(正则)多级组合筛选，规则一键搜索 |
 | 📋 规则管理 | 正则规则 CRUD，支持 JSON 导入导出 |
-| 🔍 搜索筛选 | 级别/时间/PID/TID/Tag/关键字多级组合筛选，规则一键搜索 |
+| 📌 经典场景 | 记录核心日志+备注，自动匹配标记💡，弹窗查看往期结论 |
 | 📊 日志对比 | 双文件规则命中差异 + 级别分布对比 |
 | 📤 结果导出 | TXT 原始日志 / JSON 结构化数据导出 |
+| 📋 行操作 | 复制原始行、跟踪上下文(前后各200行含正则过滤)、记录场景 |
 
 ## 快速开始
 
@@ -33,7 +35,9 @@ pip install -r requirements.txt
 python main.py
 ```
 
-启动后浏览器自动打开 `http://127.0.0.1:20306`，将 `.log` 或 `.txt` 文件拖入页面即可开始分析。
+启动后浏览器自动打开 `http://127.0.0.1:20306`，将 `.log` 或 `.txt` 文件/文件夹拖入页面即可开始分析。
+
+> 端口被占用时，程序会自动查找占用进程并杀掉后重启，无需手动干预。
 
 ### 打包为 exe（可选）
 
@@ -43,11 +47,17 @@ python -m PyInstaller build.spec --clean --noconfirm
 # 输出: dist/logs_handler.exe (约 15MB)
 ```
 
+`dist/` 目录下还附带 `clear.bat`，可手动清理端口 20306 的占用进程。
+
 ## 使用指南
 
 ### 1. 加载日志文件
 
-将日志文件或文件夹拖拽到页面中央的拖放区域，或点击「📂 选择文件」按钮。支持 `.log` / `.txt` 格式，可同时加载多个文件（用于对比）。
+将日志文件或文件夹拖拽到页面中央的拖放区域，或点击「📂 选择文件」/「📁 选择文件夹」按钮。支持 `.log` / `.txt` 格式，可同时加载多个文件（用于对比）。
+
+- **拖拽文件**：拖入单个 .log/.txt 文件
+- **拖拽文件夹**：自动读取文件夹第一层的 .log/.txt 文件
+- **选择文件夹**：批量选择文件夹，只读取第一层文件
 
 文件加载后会在下方显示文件列表，包含文件大小、行数、时间范围。
 
@@ -56,6 +66,7 @@ python -m PyInstaller build.spec --clean --noconfirm
 左侧「筛选规则」面板 → 点击「+ 新建」→ 输入规则名称和正则表达式。
 
 示例规则：
+
 | 名称 | 正则 | 说明 |
 |------|------|------|
 | 错误+崩溃 | `ANR\|crash\|fatal` | 捕获 ANR、崩溃、致命错误 |
@@ -74,11 +85,73 @@ python -m PyInstaller build.spec --clean --noconfirm
 | 时间范围 | `MM-DD HH:MM:SS.mmm` 格式 |
 | PID / TID | 精确匹配进程/线程 ID |
 | Tag | 模糊匹配日志 Tag |
-| 关键字 | 支持正则表达式，回车搜索 |
+| 关键字 | 支持正则表达式，加长输入框方便输入长表达式，回车搜索 |
 
 筛选优先级：时间范围（二分定位）→ 级别/PID/Tag → 正则规则/关键字。命中结果支持分页浏览，匹配文本黄色高亮。
 
-### 4. 日志对比
+**分页设置**：分页栏左侧下拉框支持切换 **500 / 1000 / 2000** 条/页。
+
+### 4. 行操作
+
+每条日志末尾的操作列提供三个功能按钮：
+
+| 按钮 | 说明 |
+|------|------|
+| 📋 复制 | 复制该行的原始日志内容到剪贴板 |
+| 🔍 跟踪 | 弹出大窗口显示该行前后各200行的上下文，中心行高亮，支持正则过滤 |
+| 💾 保存场景 | 将当前行的消息内容保存为经典场景（见下文） |
+
+#### 跟踪弹窗
+
+点击🔍后弹出大窗口，包含：
+
+- 文件路径和行号
+- **正则过滤输入框**：实时输入过滤表格行，统计显示 `过滤行数/总行数`
+- 中心行（选中行）浅蓝色高亮，自动滚动到居中位置
+
+### 5. 经典场景（v2.0 新增）
+
+#### 记录场景
+
+点击某行末的 💾 按钮 → 弹窗记录：
+
+- **核心日志**：默认填充当前行的消息内容，可修改，必填
+- **备注**：记录该报错可能的原因/结论，必填
+- 保存后存入本地 SQLite
+
+#### 自动匹配
+
+每次搜索完成后，系统**异步**匹配所有日志消息：
+
+- 如果某条日志的消息内容包含已保存场景的标题（大小写不敏感），则在消息末尾显示 **💡** 黄色灯泡标记
+- 匹配不阻塞主流程，即使失败也不影响搜索和加载
+
+#### 查看场景
+
+点击 💡 标记 → 弹窗列出所有匹配的场景：
+
+```
+经典场景
+
+场景：incoming call from 13800138000
+往期记录：xxxxxxxx
+
+场景：13800138000
+往期记录：xxxxxxxx
+
+Tips：往期记录结论仅做参考！（红色字体）
+```
+
+#### 场景管理
+
+点击顶部工具栏「📌 场景」按钮 → 管理弹窗：
+
+- 查看所有已保存场景
+- 单个删除
+- **导出**：导出全部场景为 JSON 文件
+- **导入**：从 JSON 文件导入场景（支持 merge 按标题去重）
+
+### 6. 日志对比
 
 加载至少 2 个文件后，点击工具栏「📊 对比」按钮：
 
@@ -87,7 +160,7 @@ python -m PyInstaller build.spec --clean --noconfirm
 - 查看规则命中差异（绿色增加/红色减少）
 - 查看 V/D/I/W/E/F 级别分布变化
 
-### 5. 导出结果
+### 7. 导出结果
 
 点击工具栏「📤 导出」：
 
@@ -109,17 +182,24 @@ python -m PyInstaller build.spec --clean --noconfirm
 | GET | `/api/files/info` | 获取已加载文件摘要 |
 | POST | `/api/files/close` | 卸载文件 |
 | GET | `/api/files/sample` | 预览指定行范围 |
-| GET | `/api/files/recent` | 最近打开文件 |
+| GET | `/api/files/context` | 获取指定行前后 N 行上下文 |
+| POST | `/api/files/upload` | 上传文件 |
 | GET | `/api/search` | 多级组合搜索 |
-| GET | `/api/search/count` | 统计规则命中数 |
 | POST | `/api/compare` | 双文件对比 |
 | POST | `/api/export` | 导出筛选结果 |
 | GET | `/api/export/download` | 下载导出文件 |
+| GET | `/api/scenarios` | 获取场景列表 |
+| POST | `/api/scenarios` | 创建场景 |
+| PUT | `/api/scenarios/{id}` | 更新场景 |
+| DELETE | `/api/scenarios/{id}` | 删除场景 |
+| GET | `/api/scenarios/export` | 导出全部场景 JSON |
+| POST | `/api/scenarios/import` | 导入场景 JSON 文件 |
+| POST | `/api/scenarios/match` | 批量匹配场景（返回消息→场景ID映射） |
 
 ### 搜索 API 参数
 
 ```
-GET /api/search?rule_id=1&level=E,F&pid=8001&keyword=crash&time_start=05-22 17:30:00.000&offset=0&limit=500
+GET /api/search?rule_id=1&level=E,F&pid=8001&keyword=crash&time_start=05-22%2017:30:00.000&offset=0&limit=500
 ```
 
 | 参数 | 类型 | 说明 |
@@ -133,7 +213,20 @@ GET /api/search?rule_id=1&level=E,F&pid=8001&keyword=crash&time_start=05-22 17:3
 | `time_start` | string | `MM-DD HH:MM:SS.mmm` |
 | `time_end` | string | `MM-DD HH:MM:SS.mmm` |
 | `offset` | int | 分页偏移 |
-| `limit` | int | 每页条数（最大 1000） |
+| `limit` | int | 每页条数（最大 2000） |
+
+### 上下文 API
+
+```
+GET /api/files/context?path=xxx.log&line_no=100&before=200&after=200
+```
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `path` | string | 文件路径 |
+| `line_no` | int | 目标行号（从1开始） |
+| `before` | int | 往前取行数（默认200） |
+| `after` | int | 往后取行数（默认200） |
 
 ## 日志格式
 
@@ -144,6 +237,7 @@ MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
 ```
 
 示例：
+
 ```
 05-22 17:30:00.003  8912  8923 W A01B01/com.ohos.sceneboard/HOME: battery level: 85%
 05-22 17:30:00.017  8821  8876 E B03C01/com.ohos.multimedia/AudioService: ANR detected in main thread
@@ -160,13 +254,14 @@ MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
 | 正则筛选（200K 命中） | 2.2s |
 | 双文件对比（150K 行） | 1.5s |
 | TXT 导出（25K 行） | < 3s |
+| 场景批量匹配（500条场景） | < 0.5s |
 
 ## 项目结构
 
 ```
 logs_handler/
-├── main.py              # 入口：启动服务 + 自动打开浏览器
-├── config.py            # 全局配置（路径/端口/限制）
+├── main.py              # 入口：启动服务 + 自动打开浏览器 + 端口自清理
+├── config.py            # 全局配置（路径/端口20306/限制）
 ├── app.py               # FastAPI 应用工厂 + 路由注册
 ├── build.spec           # PyInstaller 打包配置
 ├── requirements.txt     # 依赖清单
@@ -177,25 +272,36 @@ logs_handler/
 │   └── comparator.py    # 对比引擎（规则命中 + 级别分布）
 ├── api/
 │   ├── rules.py         # 规则 CRUD + 导入导出
-│   ├── files.py         # 文件加载/卸载/采样
-│   ├── search.py        # 搜索筛选 + 计数
+│   ├── files.py         # 文件加载/卸载/采样/上下文
+│   ├── search.py        # 搜索筛选
 │   ├── compare.py       # 日志对比
-│   └── export.py        # 结果导出
+│   ├── export.py        # 结果导出
+│   └── scenarios.py     # 经典场景 CRUD + 导入导出 + 批量匹配
 ├── storage/
-│   ├── database.py      # SQLite 连接管理
-│   └── models.py        # 数据模型
+│   ├── database.py      # SQLite 连接管理 + 建表
+│   └── models.py        # 数据模型（FilterRule, ClassicScenario）
 ├── static/
 │   ├── index.html       # 深色主题 SPA
 │   ├── css/dark.css     # 完整样式表
-│   └── js/              # 前端模块（7文件）
+│   └── js/              # 前端模块
+│       ├── api.js       # HTTP 请求封装
+│       ├── app.js       # 应用状态管理
+│       ├── table.js     # 表格渲染 + 操作列 + 跟踪弹窗
+│       ├── search.js    # 搜索筛选逻辑
+│       ├── rules.js     # 规则管理
+│       ├── files.js     # 文件加载
+│       ├── export.js    # 导出功能
+│       ├── compare.js   # 对比功能
+│       └── scenarios.js # 经典场景管理 + 匹配
 └── dist/
-    └── logs_handler.exe # PyInstaller 打包产物
+    ├── logs_handler.exe # PyInstaller 打包产物
+    └── clear.bat        # 端口清理脚本
 ```
 
 ## 技术栈
 
 - **后端**: FastAPI + Uvicorn + SQLite
-- **前端**: Vanilla JS (无框架依赖) + 深色主题 CSS
+- **前端**: Vanilla JS（无框架依赖）+ 深色主题 CSS
 - **引擎**: mmap 内存映射 + array('Q') 行偏移索引 + re 正则缓存
 - **打包**: PyInstaller 6.x, 单文件 exe ~15MB
 
