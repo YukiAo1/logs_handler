@@ -114,29 +114,59 @@ const Files = {
 
   handleDrop(event) {
     const dt = event.dataTransfer;
+    // 优先使用 items + webkitGetAsEntry 处理文件夹拖入
+    const items = Array.from(dt.items || []);
+    if (items.length > 0 && items[0].webkitGetAsEntry) {
+      this._handleDropWithEntry(items);
+      return;
+    }
+    // 降级：直接从 files 读取
     const files = Array.from(dt.files || []);
     if (!files.length) return;
-    // 拖入时，depth=0 为普通文件，depth=1 为拖入文件夹的根文件（folder/file.log）
-    const valid = [];
-    const skipped = [];
-    for (const f of files) {
-      if (!f.name || !/\.(log|txt)$/i.test(f.name)) continue;
-      const rel = f.webkitRelativePath || '';
-      const depth = (rel.match(/[/\\]/g) || []).length;
-      if (depth <= 1) {
-        valid.push(f);
-      } else {
-        skipped.push(`${f.name} (depth=${depth})`);
-      }
-    }
+    const valid = files.filter(f => f.name && /\.(log|txt)$/i.test(f.name));
     if (!valid.length) {
-      const msg = skipped.length
-        ? `发现 ${skipped.length} 个子文件夹文件被过滤: ${skipped.slice(0, 3).join(', ')}`
-        : '未找到有效的 .log 或 .txt 文件';
-      showToast(msg, 'error');
+      showToast('未找到有效的 .log 或 .txt 文件', 'error');
       return;
     }
     this.uploadAndLoad(valid);
+  },
+
+  async _handleDropWithEntry(items) {
+    const allFiles = [];
+    const entries = [];
+
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry();
+      if (!entry) continue;
+      entries.push(entry);
+    }
+
+    // 遍历所有拖入项，只读文件夹第一层
+    for (const entry of entries) {
+      if (entry.isFile) {
+        const file = await new Promise(resolve => entry.file(resolve));
+        if (file && file.name && /\.(log|txt)$/i.test(file.name)) {
+          allFiles.push(file);
+        }
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        const subEntries = await new Promise(resolve => {
+          reader.readEntries(resolve);
+        });
+        for (const sub of subEntries) {
+          if (sub.isFile && sub.name && /\.(log|txt)$/i.test(sub.name)) {
+            const file = await new Promise(resolve => sub.file(resolve));
+            if (file) allFiles.push(file);
+          }
+        }
+      }
+    }
+
+    if (!allFiles.length) {
+      showToast('未找到有效的 .log 或 .txt 文件', 'error');
+      return;
+    }
+    this.uploadAndLoad(allFiles);
   },
 
   renderFileList(result) {
