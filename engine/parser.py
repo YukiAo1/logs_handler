@@ -7,12 +7,12 @@ LOG_PATTERN = re.compile(
     r'(\d{2}:\d{2}:\d{2}\.\d{3})\s+'
     r'(\d+)\s+'
     r'(\d+)\s+'
-    r'([VDIWEF])\s+'
+    r'([DIWE])\s+'
     r'(\S+):\s+'
     r'(.*)$'
 )
 
-LEVEL_ORDER = {'V': 0, 'D': 1, 'I': 2, 'W': 3, 'E': 4, 'F': 5}
+LEVEL_ORDER = {'D': 0, 'I': 1, 'W': 2, 'E': 3}
 
 
 @dataclass
@@ -48,7 +48,7 @@ def parse_line(line: str, line_no: int, offset: int) -> LogEntry | None:
     timestamp = _parse_timestamp(date, time)
     return LogEntry(
         line_no=line_no,
-        offset=offset,
+        offset=0,
         date=date,
         time=time,
         timestamp=timestamp,
@@ -57,7 +57,7 @@ def parse_line(line: str, line_no: int, offset: int) -> LogEntry | None:
         level=level,
         tag=tag,
         message=message,
-        raw=line.rstrip('\n\r'),
+        raw=line,
     )
 
 
@@ -72,12 +72,3 @@ def _parse_timestamp(date: str, time: str) -> float:
         + int(second)
         + int(millis) / 1000.0
     )
-
-
-def parse_lines(lines: list[str], line_nos: list[int], offsets: list[int]) -> list[LogEntry]:
-    entries = []
-    for line, line_no, offset in zip(lines, line_nos, offsets):
-        entry = parse_line(line, line_no, offset)
-        if entry:
-            entries.append(entry)
-    return entries

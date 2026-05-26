@@ -15,7 +15,7 @@ def _count_by_rule(index: FileIndex, pattern_str: str,
 
 
 def _level_dist(index: FileIndex, start_line: int, end_line: int) -> dict[str, int]:
-    dist = {'V': 0, 'D': 0, 'I': 0, 'W': 0, 'E': 0, 'F': 0}
+    dist = {'D': 0, 'I': 0, 'W': 0, 'E': 0}
     for line_no in range(start_line, end_line):
         raw = read_raw_line(index, line_no)
         m = LOG_PATTERN.match(raw) if raw else None

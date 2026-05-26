@@ -90,7 +90,7 @@ const Compare = {
       </tr>
     `).join('');
 
-    const levelRows = 'VDIWEF'.split('').map(lv => {
+    const levelRows = 'DIWE'.split('').map(lv => {
       const ca = result.level_dist.a[lv] || 0;
       const cb = result.level_dist.b[lv] || 0;
       const d = cb - ca;

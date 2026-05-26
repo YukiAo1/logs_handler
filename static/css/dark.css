@@ -295,9 +295,8 @@ html, body {
   padding: 4px 8px;
   font-size: 12px;
   border-bottom: 1px solid rgba(15, 52, 96, 0.4);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 #logTable tbody tr:hover {
@@ -306,12 +305,26 @@ html, body {
 
 .col-no { width: 60px; }
 .col-date { width: 60px; }
-.col-time { width: 100px; }
+.col-time { width: 110px; }
 .col-level { width: 44px; text-align: center; }
 .col-pid { width: 60px; }
 .col-tid { width: 60px; }
-.col-tag { width: 180px; }
-.col-msg { }
+.col-tag { width: 180px; min-width: 80px; }
+.col-msg { min-width: 150px; }
+
+th .resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  user-select: none;
+}
+
+th {
+  position: relative;
+}
 
 .level-badge {
   display: inline-block;
@@ -324,12 +337,10 @@ html, body {
   font-weight: 700;
 }
 
-.level-V { background: #3a3a3a; color: #808080; }
 .level-D { background: rgba(79, 195, 247, 0.2); color: #4fc3f7; }
 .level-I { background: rgba(102, 187, 106, 0.2); color: #66bb6a; }
 .level-W { background: rgba(255, 167, 38, 0.2); color: #ffa726; }
 .level-E { background: rgba(239, 83, 80, 0.2); color: #ef5350; }
-.level-F { background: rgba(255, 23, 68, 0.3); color: #ff1744; }
 
 .match-highlight {
   background: #ffeb3b;

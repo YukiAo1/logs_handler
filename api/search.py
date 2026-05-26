@@ -48,7 +48,7 @@ def search_logs(
     if level:
         levels = [l.strip().upper() for l in level.split(',') if l.strip()]
         for lv in levels:
-            if lv not in 'VDIWEF':
+            if lv not in 'DIWE':
                 raise HTTPException(status_code=400, detail=f'无效的日志级别: {lv}')
         if not levels:
             levels = None

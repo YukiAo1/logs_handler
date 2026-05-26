@@ -21,7 +21,7 @@ const Search = {
     const keyword = document.getElementById('filterKeyword').value.trim();
 
     return {
-      level: levels.length > 0 && levels.length < 6 ? levels.join(',') : null,
+      level: levels.length > 0 && levels.length < 4 ? levels.join(',') : null,
       pid: pidVal ? parseInt(pidVal) || null : null,
       tid: tidVal ? parseInt(tidVal) || null : null,
       tag: tagVal || null,
@@ -43,7 +43,7 @@ const Search = {
 
   clearFilters() {
     document.querySelectorAll('#filterBar .level-check input').forEach(cb => {
-      cb.checked = true;
+      cb.checked = ['I', 'W', 'E'].includes(cb.value);
     });
     document.getElementById('filterTimeStart').value = '';
     document.getElementById('filterTimeEnd').value = '';
@@ -102,6 +102,7 @@ const Search = {
 
       Table.render(result.items, pattern);
       Table.renderPagination(result.offset, result.limit, result.total_matches);
+      Table.initColumnResize();
 
       const stats = document.getElementById('resultStats');
       stats.textContent = `匹配: ${result.total_matches.toLocaleString()} 条`;

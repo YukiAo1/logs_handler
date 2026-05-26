@@ -19,8 +19,8 @@ const Table = {
         `<td><span class="level-badge level-${item.level}">${item.level}</span></td>`,
         `<td>${item.pid}</td>`,
         `<td>${item.tid}</td>`,
-        `<td title="${escapeHtml(item.tag)}">${escapeHtml(item.tag)}</td>`,
-        `<td title="${escapeHtml(item.message)}">${this._highlight(item.message, item.raw)}</td>`,
+        `<td>${escapeHtml(item.tag)}</td>`,
+        `<td>${this._highlight(item.message, item.raw)}</td>`,
       ].join('');
       frag.appendChild(tr);
     }
@@ -59,5 +59,37 @@ const Table = {
       <button class="btn btn-sm" ${offset + limit >= total ? 'disabled' : ''} onclick="Search.goPage(${offset + limit})">▶</button>
       <button class="btn btn-sm" ${offset + limit >= total ? 'disabled' : ''} onclick="Search.goPage(${Math.floor((totalPages - 1) * limit)})">▶▶</button>
     `;
+  },
+
+  initColumnResize() {
+    const table = document.getElementById('logTable');
+    if (!table) return;
+    const headers = table.querySelectorAll('th');
+    headers.forEach(th => {
+      const handle = document.createElement('div');
+      handle.className = 'resize-handle';
+      th.appendChild(handle);
+      let startX = 0, startWidth = 0;
+      const onMouseDown = (e) => {
+        startX = e.clientX;
+        startWidth = th.offsetWidth;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        e.preventDefault();
+      };
+      const onMouseMove = (e) => {
+        const diff = e.clientX - startX;
+        const newWidth = Math.max(30, startWidth + diff);
+        th.style.width = `${newWidth}px`;
+        th.style.maxWidth = `${newWidth}px`;
+        const cols = table.querySelectorAll(`colgroup col:nth-child(${[...headers].indexOf(th) + 1})`);
+        if (cols.length) cols[0].style.width = `${newWidth}px`;
+      };
+      const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+      handle.addEventListener('mousedown', onMouseDown);
+    });
   },
 };
