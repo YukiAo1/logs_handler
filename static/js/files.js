@@ -68,15 +68,26 @@ const Files = {
   handleFolderPick(event) {
     const allFiles = Array.from(event.target.files || []);
     if (!allFiles.length) return;
-    // 只取第一层文件：webkitRelativePath 不含路径分隔符
-    const valid = allFiles.filter(f => {
-      if (!f.name || !/\.(log|txt)$/i.test(f.name)) return false;
+    // 只取第一层文件：按 webkitRelativePath 深度判断
+    const valid = [];
+    const skipped = [];
+    for (const f of allFiles) {
+      if (!f.name || !/\.(log|txt)$/i.test(f.name)) continue;
       const rel = f.webkitRelativePath || '';
-      // webkitRelativePath 为空（普通文件选择）或仅文件名（第一层）才保留
-      return !rel || (!rel.includes('/') && !rel.includes('\\'));
-    });
+      // 深度 = 路径分隔符数量（/ 或 \）
+      const depth = (rel.match(/[/\\]/g) || []).length;
+      // 文件夹选择器：根文件 depth=0，子文件夹 depth>=1
+      if (depth === 0) {
+        valid.push(f);
+      } else {
+        skipped.push(`${f.name} (depth=${depth})`);
+      }
+    }
     if (!valid.length) {
-      showToast('未找到有效的 .log 或 .txt 文件', 'error');
+      const msg = skipped.length
+        ? `发现 ${skipped.length} 个子文件夹文件被过滤: ${skipped.slice(0, 3).join(', ')}`
+        : '未找到有效的 .log 或 .txt 文件';
+      showToast(msg, 'error');
       return;
     }
     this.uploadAndLoad(valid);
@@ -105,13 +116,24 @@ const Files = {
     const dt = event.dataTransfer;
     const files = Array.from(dt.files || []);
     if (!files.length) return;
-    const valid = files.filter(f => {
-      if (!f.name || !/\.(log|txt)$/i.test(f.name)) return false;
+    // 拖入时，depth=0 为普通文件，depth=1 为拖入文件夹的根文件（folder/file.log）
+    const valid = [];
+    const skipped = [];
+    for (const f of files) {
+      if (!f.name || !/\.(log|txt)$/i.test(f.name)) continue;
       const rel = f.webkitRelativePath || '';
-      return !rel || (!rel.includes('/') && !rel.includes('\\'));
-    });
+      const depth = (rel.match(/[/\\]/g) || []).length;
+      if (depth <= 1) {
+        valid.push(f);
+      } else {
+        skipped.push(`${f.name} (depth=${depth})`);
+      }
+    }
     if (!valid.length) {
-      showToast('未找到有效的 .log 或 .txt 文件', 'error');
+      const msg = skipped.length
+        ? `发现 ${skipped.length} 个子文件夹文件被过滤: ${skipped.slice(0, 3).join(', ')}`
+        : '未找到有效的 .log 或 .txt 文件';
+      showToast(msg, 'error');
       return;
     }
     this.uploadAndLoad(valid);
