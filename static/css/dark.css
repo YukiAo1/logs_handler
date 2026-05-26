@@ -335,26 +335,27 @@ th:hover .resize-handle {
 
 .col-actions {
   text-align: center;
+  white-space: nowrap;
 }
 
 .col-actions .action-btn {
-  display: inline-block;
-  padding: 2px 6px;
-  margin: 0 2px;
-  font-size: 11px;
-  line-height: 1.4;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  background: var(--panel);
+  display: inline;
+  padding: 1px 4px;
+  margin: 0 1px;
+  font-size: 13px;
+  line-height: 1.2;
+  border: none;
+  background: transparent;
   color: var(--accent2);
   cursor: pointer;
-  white-space: nowrap;
   user-select: none;
+  opacity: 0.6;
+  transition: opacity 0.15s;
 }
 
 .col-actions .action-btn:hover {
-  background: rgba(100, 180, 255, 0.15);
-  border-color: var(--accent1);
+  opacity: 1;
+  background: transparent;
 }
 
 .level-badge {
@@ -574,6 +575,29 @@ input:focus, textarea:focus, select:focus {
   white-space: nowrap;
 }
 
+.trace-header .trace-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.trace-header .trace-filter input {
+  width: 160px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 11px;
+  font-family: Consolas, monospace;
+  outline: none;
+}
+
+.trace-header .trace-filter input:focus {
+  border-color: var(--accent1);
+}
+
 .trace-file {
   font-size: 11px;
   color: var(--text2);
@@ -585,7 +609,6 @@ input:focus, textarea:focus, select:focus {
 .trace-count {
   font-size: 11px;
   color: var(--text2);
-  margin-left: auto;
   white-space: nowrap;
 }
 

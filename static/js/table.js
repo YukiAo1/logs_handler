@@ -1,16 +1,20 @@
 const Table = {
   currentPattern: '',
+  _items: [],
 
   render(items, pattern) {
     this.currentPattern = pattern || '';
     const tbody = document.getElementById('logTableBody');
+    this._items = items;
+
     if (!items.length) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text2)">无匹配结果</td></tr>';
       return;
     }
 
     const frag = document.createDocumentFragment();
-    for (const item of items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
       const tr = document.createElement('tr');
       tr.innerHTML = [
         `<td>${item.line_no}</td>`,
@@ -22,97 +26,87 @@ const Table = {
         `<td>${escapeHtml(item.tag)}</td>`,
         `<td>${this._highlight(item.message, item.raw)}</td>`,
         `<td class="col-actions">
-          <span class="action-btn" onclick="Table.copyRow(this)">复制</span>
-          <span class="action-btn" onclick="Table.showTrace(this)">跟踪</span>
+          <span class="action-btn act-copy" title="复制原始行">📋</span>
+          <span class="action-btn act-trace" title="跟踪上下文">🔍</span>
         </td>`,
       ].join('');
-      // 保存 item 数据供复制和跟踪使用
-      tr.dataset.item = JSON.stringify(item);
+      tr.dataset.rowIdx = i;
       frag.appendChild(tr);
     }
 
     tbody.innerHTML = '';
     tbody.appendChild(frag);
+
+    if (!tbody._delegationReady) {
+      tbody._delegationReady = true;
+      tbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('.action-btn');
+        if (!btn) return;
+        const tr = btn.closest('tr');
+        if (!tr) return;
+        const idx = parseInt(tr.dataset.rowIdx);
+        if (isNaN(idx) || !Table._items[idx]) return;
+        e.preventDefault();
+        if (btn.classList.contains('act-copy')) {
+          Table._handleCopy(idx);
+        } else if (btn.classList.contains('act-trace')) {
+          Table._handleTrace(idx);
+        }
+      });
+    }
   },
 
-  copyRow(btn) {
-    const tr = btn.closest('tr');
-    if (!tr) return;
-    const item = JSON.parse(tr.dataset.item || '{}');
-    const text = [
-      `行号: ${item.line_no}`,
-      `日期: ${item.date}`,
-      `时间: ${item.time}`,
-      `级别: ${item.level}`,
-      `PID: ${item.pid}`,
-      `TID: ${item.tid}`,
-      `Tag: ${item.tag}`,
-      `消息: ${item.message}`,
-    ].join('\n');
+  _handleCopy(idx) {
+    const item = this._items[idx];
+    if (!item) return;
+    const text = item.raw || item.message;
     navigator.clipboard.writeText(text).then(() => {
-      btn.textContent = '已复制';
-      setTimeout(() => { btn.textContent = '复制'; }, 1500);
+      showToast('已复制到剪贴板', 'success');
     }).catch(() => {
-      // 降级方案
       const ta = document.createElement('textarea');
       ta.value = text;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      btn.textContent = '已复制';
-      setTimeout(() => { btn.textContent = '复制'; }, 1500);
+      showToast('已复制到剪贴板', 'success');
     });
   },
 
-  async showTrace(btn) {
-    const tr = btn.closest('tr');
-    if (!tr) return;
-    const item = JSON.parse(tr.dataset.item || '{}');
-    if (!item.file_path) {
+  async _handleTrace(idx) {
+    const item = this._items[idx];
+    if (!item || !item.file_path) {
       showToast('无法获取文件路径', 'error');
       return;
     }
     try {
-      btn.textContent = '加载中...';
       const result = await API.get('/api/files/context', {
         path: item.file_path,
         line_no: item.line_no,
         before: 200,
         after: 200,
       });
-      btn.textContent = '跟踪';
       this._showTraceModal(result);
     } catch (e) {
-      btn.textContent = '跟踪';
       showToast('跟踪失败: ' + e.message, 'error');
     }
   },
 
   _showTraceModal(result) {
+    this._traceData = result;
     const overlay = document.getElementById('modalOverlay');
     const box = document.getElementById('modalBox');
     const center = result.center_line;
-
-    const rows = result.lines.map(line => {
-      const cls = line.line_no === center ? 'trace-row trace-center' : 'trace-row';
-      return `<tr class="${cls}">
-        <td class="trace-lno">${line.line_no}</td>
-        <td>${escapeHtml(line.date)} ${escapeHtml(line.time)}</td>
-        <td><span class="level-badge level-${line.level}">${line.level}</span></td>
-        <td>${line.pid}</td>
-        <td>${line.tid}</td>
-        <td>${escapeHtml(line.tag)}</td>
-        <td>${escapeHtml(line.message)}</td>
-      </tr>`;
-    }).join('');
 
     box.innerHTML = `
       <div class="trace-modal">
         <div class="trace-header">
           <h3>日志跟踪 - 行 ${center}</h3>
           <span class="trace-file">${escapeHtml(result.file_path)}</span>
-          <span class="trace-count">显示 ${result.lines.length} 行 / 共 ${result.total_lines.toLocaleString()} 行</span>
+          <span class="trace-filter">
+            <input type="text" id="traceFilter" placeholder="正则过滤" oninput="Table._filterTraceRows()">
+          </span>
+          <span class="trace-count" id="traceCount">${result.lines.length} 行 / ${result.total_lines.toLocaleString()} 行</span>
         </div>
         <div class="trace-body">
           <table class="trace-table">
@@ -127,7 +121,7 @@ const Table = {
                 <th>消息</th>
               </tr>
             </thead>
-            <tbody>${rows}</tbody>
+            <tbody id="traceTbody">${this._buildTraceRows(result.lines, center)}</tbody>
           </table>
         </div>
         <div class="trace-footer">
@@ -140,12 +134,52 @@ const Table = {
     document.getElementById('modalCancel').onclick = () => { overlay.style.display = 'none'; };
     overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
 
-    // 滚动到中心行
     setTimeout(() => {
-      const tbody = box.querySelector('.trace-table tbody');
+      const tbody = document.getElementById('traceTbody');
       const centerRow = tbody.querySelector('.trace-center');
       if (centerRow) centerRow.scrollIntoView({ block: 'center' });
     }, 50);
+  },
+
+  _buildTraceRows(lines, center) {
+    return lines.map(line => {
+      const cls = line.line_no === center ? 'trace-row trace-center' : 'trace-row';
+      return `<tr class="${cls}">
+        <td class="trace-lno">${line.line_no}</td>
+        <td>${escapeHtml(line.date)} ${escapeHtml(line.time)}</td>
+        <td><span class="level-badge level-${line.level}">${line.level}</span></td>
+        <td>${line.pid}</td>
+        <td>${line.tid}</td>
+        <td>${escapeHtml(line.tag)}</td>
+        <td>${escapeHtml(line.message)}</td>
+      </tr>`;
+    }).join('');
+  },
+
+  _filterTraceRows() {
+    const input = document.getElementById('traceFilter');
+    const tbody = document.getElementById('traceTbody');
+    const countEl = document.getElementById('traceCount');
+    if (!input || !tbody || !this._traceData) return;
+
+    const raw = input.value;
+    let re;
+    try {
+      re = raw ? new RegExp(raw, 'i') : null;
+    } catch {
+      return;
+    }
+
+    const center = this._traceData.center_line;
+    const allLines = this._traceData.lines;
+    const filtered = re ? allLines.filter(l => re.test(l.raw || l.message)) : allLines;
+    tbody.innerHTML = this._buildTraceRows(filtered, center);
+    countEl.textContent = `${filtered.length}/${allLines.length} 行 / ${this._traceData.total_lines.toLocaleString()} 行`;
+
+    if (filtered.length > 0) {
+      const centerRow = tbody.querySelector('.trace-center');
+      if (centerRow) centerRow.scrollIntoView({ block: 'center' });
+    }
   },
 
   _highlight(message, raw) {
