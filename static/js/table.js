@@ -63,41 +63,36 @@ const Table = {
 
   initColumnResize() {
     const table = document.getElementById('logTable');
-    if (!table) return;
+    if (!table || table._resizeReady) return;
+    table._resizeReady = true;
 
-    table.querySelectorAll('.resize-handle').forEach(h => h.remove());
+    const cols = table.querySelectorAll('colgroup col');
+    if (cols.length === 0) return;
 
-    const headers = table.querySelectorAll('th');
-    headers.forEach(th => {
+    const headers = table.querySelectorAll('thead th');
+    headers.forEach((th, idx) => {
       const handle = document.createElement('div');
       handle.className = 'resize-handle';
       th.appendChild(handle);
-      let startX = 0, startWidth = 0;
-      const colIdx = [...headers].indexOf(th);
-      const onMouseDown = (e) => {
-        startX = e.clientX;
-        startWidth = table.rows[0]?.cells[colIdx]?.offsetWidth || th.offsetWidth;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+
+      handle.addEventListener('mousedown', (e) => {
         e.preventDefault();
-      };
-      const onMouseMove = (e) => {
-        const diff = e.clientX - startX;
-        const newWidth = Math.max(40, startWidth + diff);
-        for (let r = 0; r < table.rows.length; r++) {
-          const cell = table.rows[r].cells[colIdx];
-          if (cell) {
-            cell.style.width = `${newWidth}px`;
-            cell.style.maxWidth = `${newWidth}px`;
-            cell.style.minWidth = `${newWidth}px`;
-          }
-        }
-      };
-      const onMouseUp = () => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-      };
-      handle.addEventListener('mousedown', onMouseDown);
+        e.stopPropagation();
+        const startX = e.clientX;
+        const col = cols[idx];
+        const startWidth = col.offsetWidth || th.offsetWidth;
+
+        const onMove = (ev) => {
+          const newW = Math.max(30, startWidth + (ev.clientX - startX));
+          col.style.width = newW + 'px';
+        };
+        const onUp = () => {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
     });
   },
 };

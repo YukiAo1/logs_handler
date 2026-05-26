@@ -102,7 +102,6 @@ const Search = {
 
       Table.render(result.items, pattern);
       Table.renderPagination(result.offset, result.limit, result.total_matches);
-      Table.initColumnResize();
 
       const stats = document.getElementById('resultStats');
       stats.textContent = `匹配: ${result.total_matches.toLocaleString()} 条`;

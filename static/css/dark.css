@@ -272,6 +272,7 @@ html, body {
 #logTable {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 #logTable thead {
@@ -296,21 +297,13 @@ html, body {
   border-bottom: 1px solid rgba(15, 52, 96, 0.4);
   white-space: pre-wrap;
   word-break: break-all;
-  overflow: visible;
 }
 
 #logTable tbody tr:hover {
   background: var(--row-hover);
 }
 
-.col-no { min-width: 60px; }
-.col-date { min-width: 60px; }
-.col-time { min-width: 110px; }
-.col-level { min-width: 44px; text-align: center; }
-.col-pid { min-width: 60px; }
-.col-tid { min-width: 60px; }
-.col-tag { min-width: 100px; }
-.col-msg { min-width: 150px; width: 100%; }
+.col-level { text-align: center; }
 
 th .resize-handle {
   position: absolute;
