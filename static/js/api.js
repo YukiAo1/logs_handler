@@ -61,6 +61,19 @@ const API = {
     return res.json();
   },
 
+  async uploadMultiple(url, files) {
+    const form = new FormData();
+    for (const f of files) {
+      form.append('files', f);
+    }
+    const res = await fetch(url, { method: 'POST', body: form });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || res.statusText);
+    }
+    return res.json();
+  },
+
   async download(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error('下载失败');

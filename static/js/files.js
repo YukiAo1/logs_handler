@@ -54,59 +54,39 @@ const Files = {
   handleFilePick(event) {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
-    const paths = files.map(f => f.path).filter(p => p && /\.(log|txt)$/i.test(p));
-    if (!paths.length) {
+    const valid = files.filter(f => f.name && /\.(log|txt)$/i.test(f.name));
+    if (!valid.length) {
       showToast('未找到有效的 .log 或 .txt 文件', 'error');
       return;
     }
-    this.loadFiles(paths);
+    this.uploadAndLoad(valid);
+  },
+
+  async uploadAndLoad(files) {
+    App.setStatus(`正在上传 ${files.length} 个文件...`);
+    try {
+      const result = await API.uploadMultiple('/api/files/upload', files);
+      App.state.files = result.files;
+      this.renderFileList(result);
+      document.getElementById('filterBar').style.display = result.files.length ? '' : 'none';
+      App.setStatus(`已加载 ${result.total_files} 个文件, 共 ${result.total_lines.toLocaleString()} 行`);
+      showToast(`加载完成: ${result.total_files} 个文件`, 'success');
+    } catch (e) {
+      App.setStatus('加载失败');
+      showToast('加载失败: ' + e.message, 'error');
+    }
   },
 
   handleDrop(event) {
     const dt = event.dataTransfer;
-    const items = Array.from(dt.items || []);
-    const entries = [];
-    for (const item of items) {
-      const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
-      if (entry) entries.push(entry);
-    }
-
-    if (!entries.length && dt.files && dt.files.length) {
-      const paths = Array.from(dt.files)
-        .map(f => f.path)
-        .filter(p => p && /\.(log|txt)$/i.test(p));
-      if (paths.length) {
-        this.loadFiles(paths);
-      }
+    const files = Array.from(dt.files || []);
+    if (!files.length) return;
+    const valid = files.filter(f => f.name && /\.(log|txt)$/i.test(f.name));
+    if (!valid.length) {
+      showToast('未找到有效的 .log 或 .txt 文件', 'error');
       return;
     }
-
-    const filePaths = [];
-    const processEntry = (entry) => {
-      if (entry.isFile && /\.(log|txt)$/i.test(entry.name)) {
-        filePaths.push(entry.fullPath);
-      } else if (entry.isDirectory) {
-        const reader = entry.createReader();
-        return new Promise((resolve) => {
-          const readAll = () => {
-            reader.readEntries((subEntries) => {
-              if (!subEntries.length) { resolve(); return; }
-              const promises = subEntries.map(e => processEntry(e));
-              Promise.all(promises).then(() => readAll());
-            });
-          };
-          readAll();
-        });
-      }
-      return Promise.resolve();
-    };
-
-    const promises = entries.map(e => processEntry(e));
-    Promise.all(promises).then(() => {
-      if (filePaths.length) {
-        this.loadFiles(filePaths);
-      }
-    });
+    this.uploadAndLoad(valid);
   },
 
   renderFileList(result) {

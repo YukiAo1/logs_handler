@@ -1,13 +1,14 @@
 import os
 import glob as glob_module
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 
 from storage.database import get_db
 from storage.models import now_iso
 from engine.indexer import FileIndex, index_file, read_raw_line
 from engine.parser import parse_line
+from config import APP_DIR
 
 router = APIRouter(prefix='/api/files', tags=['files'])
 
@@ -158,6 +159,30 @@ def sample_lines(path: str = '', offset: int = 0, limit: int = 20):
                 'raw': entry.raw,
             })
     return {'lines': lines, 'offset': offset, 'limit': limit, 'total_lines': idx.total_lines}
+
+
+_upload_dir = os.path.join(APP_DIR, 'uploads')
+os.makedirs(_upload_dir, exist_ok=True)
+
+
+@router.post('/upload')
+async def upload_files(files: list[UploadFile] = File(...)):
+    saved_paths = []
+    for f in files:
+        if not f.filename:
+            continue
+        name = f.filename.replace('\\', '/').split('/')[-1]
+        if not name.lower().endswith(('.log', '.txt')):
+            continue
+        save_path = os.path.join(_upload_dir, name)
+        content = await f.read()
+        with open(save_path, 'wb') as wf:
+            wf.write(content)
+        saved_paths.append(save_path)
+    if not saved_paths:
+        raise HTTPException(status_code=400, detail='未找到有效的 .log 或 .txt 文件')
+    result = open_files(OpenRequest(paths=saved_paths))
+    return result
 
 
 @router.get('/recent')
