@@ -8,6 +8,7 @@ const App = {
   init() {
     Rules.loadRules();
     this.setupDropZone();
+    Table.initColumnResize();
   },
 
   setupDropZone() {

@@ -63,8 +63,9 @@ const Table = {
 
   initColumnResize() {
     const table = document.getElementById('logTable');
-    if (!table || table._resizeInited) return;
-    table._resizeInited = true;
+    if (!table) return;
+
+    table.querySelectorAll('.resize-handle').forEach(h => h.remove());
 
     const headers = table.querySelectorAll('th');
     headers.forEach(th => {
@@ -72,9 +73,10 @@ const Table = {
       handle.className = 'resize-handle';
       th.appendChild(handle);
       let startX = 0, startWidth = 0;
+      const colIdx = [...headers].indexOf(th);
       const onMouseDown = (e) => {
         startX = e.clientX;
-        startWidth = th.offsetWidth;
+        startWidth = table.rows[0]?.cells[colIdx]?.offsetWidth || th.offsetWidth;
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
         e.preventDefault();
@@ -82,9 +84,14 @@ const Table = {
       const onMouseMove = (e) => {
         const diff = e.clientX - startX;
         const newWidth = Math.max(40, startWidth + diff);
-        th.style.width = `${newWidth}px`;
-        th.style.maxWidth = `${newWidth}px`;
-        th.style.minWidth = `${newWidth}px`;
+        for (let r = 0; r < table.rows.length; r++) {
+          const cell = table.rows[r].cells[colIdx];
+          if (cell) {
+            cell.style.width = `${newWidth}px`;
+            cell.style.maxWidth = `${newWidth}px`;
+            cell.style.minWidth = `${newWidth}px`;
+          }
+        }
       };
       const onMouseUp = () => {
         document.removeEventListener('mousemove', onMouseMove);
