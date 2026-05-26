@@ -72,9 +72,8 @@ const Files = {
     const valid = allFiles.filter(f => {
       if (!f.name || !/\.(log|txt)$/i.test(f.name)) return false;
       const rel = f.webkitRelativePath || '';
-      // 如果 webkitRelativePath 为空（普通文件选择），也保留
-      // 否则只有不含 '/' 的才是第一层文件
-      return !rel || !rel.includes('/');
+      // webkitRelativePath 为空（普通文件选择）或仅文件名（第一层）才保留
+      return !rel || (!rel.includes('/') && !rel.includes('\\'));
     });
     if (!valid.length) {
       showToast('未找到有效的 .log 或 .txt 文件', 'error');
@@ -109,7 +108,7 @@ const Files = {
     const valid = files.filter(f => {
       if (!f.name || !/\.(log|txt)$/i.test(f.name)) return false;
       const rel = f.webkitRelativePath || '';
-      return !rel || !rel.includes('/');
+      return !rel || (!rel.includes('/') && !rel.includes('\\'));
     });
     if (!valid.length) {
       showToast('未找到有效的 .log 或 .txt 文件', 'error');
