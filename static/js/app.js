@@ -52,6 +52,9 @@ const App = {
     document.getElementById('welcome').style.display = 'none';
     document.getElementById('searchResult').style.display = '';
     document.getElementById('filterBar').style.display = App.state.files.length ? '' : 'none';
+
+    // 表格可见后确保初始化列宽拖拽
+    setTimeout(() => Table.initColumnResize(), 0);
   },
 
   setStatus(text) {

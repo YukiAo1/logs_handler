@@ -7,6 +7,7 @@ build/
 # PyInstaller
 *.spec
 !build.spec
+dist/
 
 # IDE
 .vscode/

@@ -63,27 +63,40 @@ const Table = {
 
   initColumnResize() {
     const table = document.getElementById('logTable');
-    if (!table || table._resizeReady) return;
-    table._resizeReady = true;
+    if (!table) return;
+
+    // 如果已经初始化过，直接返回
+    if (table._resizeReady) return;
 
     const cols = table.querySelectorAll('colgroup col');
     if (cols.length === 0) return;
 
     const headers = table.querySelectorAll('thead th');
+    if (headers.length === 0) return;
+
+    table._resizeReady = true;
+
     headers.forEach((th, idx) => {
+      // 避免重复添加手柄
+      if (th.querySelector('.resize-handle')) return;
+
       const handle = document.createElement('div');
       handle.className = 'resize-handle';
+      handle.title = '拖拽调整列宽';
       th.appendChild(handle);
 
       handle.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
         const startX = e.clientX;
+
+        // col.offsetWidth 在 display:none 时为 0，用 th 的实际渲染宽度作为备用
         const col = cols[idx];
-        const startWidth = col.offsetWidth || th.offsetWidth;
+        const startWidth = col.offsetWidth > 0 ? col.offsetWidth : th.offsetWidth;
+        if (startWidth <= 0) return;
 
         const onMove = (ev) => {
-          const newW = Math.max(30, startWidth + (ev.clientX - startX));
+          const newW = Math.max(40, startWidth + (ev.clientX - startX));
           col.style.width = newW + 'px';
         };
         const onUp = () => {
