@@ -11,6 +11,7 @@ from api.files import router as files_router
 from api.search import router as search_router
 from api.compare import router as compare_router
 from api.export import router as export_router
+from api.scenarios import router as scenarios_router
 
 
 def create_app() -> FastAPI:
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     app.include_router(search_router)
     app.include_router(compare_router)
     app.include_router(export_router)
+    app.include_router(scenarios_router)
 
     if os.path.isdir(STATIC_DIR):
         app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')

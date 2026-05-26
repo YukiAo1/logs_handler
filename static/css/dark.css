@@ -543,11 +543,14 @@ input:focus, textarea:focus, select:focus {
 }
 
 .modal .form-group input,
-.modal .form-group textarea {
+.modal .form-group textarea,
+.modal .form-input,
+.modal .form-textarea {
   width: 100%;
 }
 
-.modal .form-group textarea {
+.modal .form-group textarea,
+.modal .form-textarea {
   height: 60px;
   resize: vertical;
   font-family: Consolas, monospace;
@@ -681,6 +684,107 @@ input:focus, textarea:focus, select:focus {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* --- 经典场景 --- */
+
+.scenario-indicator {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 5px;
+  font-size: 12px;
+  line-height: 1.4;
+  border: 1px solid var(--accent1);
+  border-radius: 3px;
+  background: rgba(100, 180, 255, 0.1);
+  color: var(--accent1);
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.scenario-indicator:hover {
+  opacity: 1;
+}
+
+.scenario-note-body {
+  padding: 12px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.scenario-note-warn {
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 80, 80, 0.4);
+  border-radius: 4px;
+  background: rgba(255, 80, 80, 0.08);
+  color: #ff6666;
+  font-size: 12px;
+  text-align: center;
+}
+
+.scenario-manage {
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+  max-height: 60vh;
+}
+
+.scenario-manage-header h3 {
+  margin: 0 0 12px;
+}
+
+.scenario-manage-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.scenario-manage-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.scenario-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.scenario-item:last-child {
+  border-bottom: none;
+}
+
+.scenario-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent2);
+  min-width: 120px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-item-note {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-item-actions {
+  flex-shrink: 0;
 }
 
 .toast {

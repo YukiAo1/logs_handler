@@ -24,11 +24,12 @@ const Table = {
         `<td>${item.pid}</td>`,
         `<td>${item.tid}</td>`,
         `<td>${escapeHtml(item.tag)}</td>`,
-        `<td>${this._highlight(item.message, item.raw)}</td>`,
+        `<td class="col-msg-cell">${this._highlight(item.message, item.raw)}</td>`,
         `<td class="col-actions">
           <div class="action-wrap">
             <span class="action-btn act-copy" title="复制原始行">📋</span>
             <span class="action-btn act-trace" title="跟踪上下文">🔍</span>
+            <span class="action-btn act-save" title="记录经典场景">💾</span>
           </div>
         </td>`,
       ].join('');
@@ -42,7 +43,14 @@ const Table = {
     if (!tbody._delegationReady) {
       tbody._delegationReady = true;
       tbody.addEventListener('click', (e) => {
-        const btn = e.target.closest('.action-btn');
+        const target = e.target;
+        // 场景指示器点击
+        if (target.classList.contains('scenario-indicator')) {
+          const sid = parseInt(target.dataset.scenarioId);
+          if (sid) Scenarios.showNoteDialog(sid);
+          return;
+        }
+        const btn = target.closest('.action-btn');
         if (!btn) return;
         const tr = btn.closest('tr');
         if (!tr) return;
@@ -53,9 +61,14 @@ const Table = {
           Table._handleCopy(idx);
         } else if (btn.classList.contains('act-trace')) {
           Table._handleTrace(idx);
+        } else if (btn.classList.contains('act-save')) {
+          Table._handleSaveScenario(idx);
         }
       });
     }
+
+    // 异步匹配场景
+    this._matchScenariosAsync();
   },
 
   _handleCopy(idx) {
@@ -91,6 +104,40 @@ const Table = {
       this._showTraceModal(result);
     } catch (e) {
       showToast('跟踪失败: ' + e.message, 'error');
+    }
+  },
+
+  _handleSaveScenario(idx) {
+    const item = this._items[idx];
+    if (!item) return;
+    Scenarios.showCreateDialog(item.message);
+  },
+
+  async _matchScenariosAsync() {
+    if (!Scenarios._scenarios.length) return;
+    const messages = this._items.map(item => item.message).filter(Boolean);
+    if (!messages.length) return;
+    try {
+      const result = await API.post('/api/scenarios/match', messages);
+      const matches = result.matches || {};
+      const tbody = document.getElementById('logTableBody');
+      if (!tbody) return;
+      const rows = tbody.querySelectorAll('tr');
+      for (let i = 0; i < this._items.length && i < rows.length; i++) {
+        const item = this._items[i];
+        const matchedIds = matches[item.message];
+        if (matchedIds && matchedIds.length) {
+          const msgCell = rows[i].querySelector('.col-msg-cell');
+          if (msgCell) {
+            const indicators = matchedIds.map(sid =>
+              `<span class="scenario-indicator" data-scenario-id="${sid}" title="查看往期结论">?</span>`
+            ).join('');
+            msgCell.insertAdjacentHTML('beforeend', indicators);
+          }
+        }
+      }
+    } catch {
+      // 匹配失败不影响主流程
     }
   },
 

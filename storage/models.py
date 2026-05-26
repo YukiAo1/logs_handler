@@ -33,5 +33,33 @@ class FilterRule:
         }
 
 
+@dataclass
+class ClassicScenario:
+    id: int | None = None
+    title: str = ''
+    note: str = ''
+    created_at: str = ''
+    updated_at: str = ''
+
+    @staticmethod
+    def from_row(row) -> 'ClassicScenario':
+        return ClassicScenario(
+            id=row['id'],
+            title=row['title'],
+            note=row['note'],
+            created_at=row['created_at'],
+            updated_at=row['updated_at'],
+        )
+
+    def to_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'title': self.title,
+            'note': self.note,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at,
+        }
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()

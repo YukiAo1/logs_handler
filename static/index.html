@@ -17,6 +17,7 @@
       <button class="btn" onclick="Export.showExportDialog()" title="导出筛选结果">📤 导出</button>
       <button class="btn" onclick="Compare.showCompareView()" title="对比两份日志">📊 对比</button>
       <button class="btn" onclick="Files.unloadAll()" title="卸载全部文件">🗑 卸载</button>
+      <button class="btn" onclick="Scenarios.showManageDialog()" title="经典场景管理">📌 场景</button>
       <input type="file" id="filePickerInput" multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
       <input type="file" id="folderPickerInput" webkitdirectory multiple accept=".log,.txt" style="display:none" onchange="Files.handleFolderPick(event)">
     </div>
@@ -142,5 +143,9 @@
 <script src="/static/js/files.js"></script>
 <script src="/static/js/export.js"></script>
 <script src="/static/js/compare.js"></script>
+<script src="/static/js/scenarios.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => Scenarios.load());
+</script>
 </body>
 </html>
