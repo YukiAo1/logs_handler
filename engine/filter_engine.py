@@ -105,7 +105,7 @@ def search(
         entry = parse_line(raw, line_no, index.offsets[line_no])
         if entry:
             results.append({
-                'line_no': entry.line_no,
+                'line_no': entry.line_no + 1,
                 'date': entry.date,
                 'time': entry.time,
                 'pid': entry.pid,

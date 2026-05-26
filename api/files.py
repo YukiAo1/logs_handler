@@ -148,7 +148,7 @@ def sample_lines(path: str = '', offset: int = 0, limit: int = 20):
         entry = parse_line(raw, line_no, idx.offsets[line_no])
         if entry:
             lines.append({
-                'line_no': entry.line_no,
+                'line_no': entry.line_no + 1,
                 'date': entry.date,
                 'time': entry.time,
                 'pid': entry.pid,
@@ -175,7 +175,7 @@ def context_lines(path: str = '', line_no: int = 1, before: int = 200, after: in
         entry = parse_line(raw, ln, idx.offsets[ln])
         if entry:
             lines.append({
-                'line_no': entry.line_no,
+                'line_no': entry.line_no + 1,
                 'date': entry.date,
                 'time': entry.time,
                 'pid': entry.pid,
