@@ -336,13 +336,15 @@ th:hover .resize-handle {
 .col-actions {
   text-align: center;
   white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
 }
 
-.col-actions .action-btn {
+.col-actions .action-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.col-actions .action-wrap .action-btn {
   flex-shrink: 0;
   display: inline-block;
   padding: 1px 4px;
@@ -357,7 +359,7 @@ th:hover .resize-handle {
   transition: opacity 0.15s;
 }
 
-.col-actions .action-btn:hover {
+.col-actions .action-wrap .action-btn:hover {
   opacity: 1;
   background: transparent;
 }

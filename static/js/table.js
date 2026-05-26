@@ -26,8 +26,10 @@ const Table = {
         `<td>${escapeHtml(item.tag)}</td>`,
         `<td>${this._highlight(item.message, item.raw)}</td>`,
         `<td class="col-actions">
-          <span class="action-btn act-copy" title="复制原始行">📋</span>
-          <span class="action-btn act-trace" title="跟踪上下文">🔍</span>
+          <div class="action-wrap">
+            <span class="action-btn act-copy" title="复制原始行">📋</span>
+            <span class="action-btn act-trace" title="跟踪上下文">🔍</span>
+          </div>
         </td>`,
       ].join('');
       tr.dataset.rowIdx = i;
