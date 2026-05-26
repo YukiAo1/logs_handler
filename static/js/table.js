@@ -63,7 +63,9 @@ const Table = {
 
   initColumnResize() {
     const table = document.getElementById('logTable');
-    if (!table) return;
+    if (!table || table._resizeInited) return;
+    table._resizeInited = true;
+
     const headers = table.querySelectorAll('th');
     headers.forEach(th => {
       const handle = document.createElement('div');
@@ -79,11 +81,10 @@ const Table = {
       };
       const onMouseMove = (e) => {
         const diff = e.clientX - startX;
-        const newWidth = Math.max(30, startWidth + diff);
+        const newWidth = Math.max(40, startWidth + diff);
         th.style.width = `${newWidth}px`;
         th.style.maxWidth = `${newWidth}px`;
-        const cols = table.querySelectorAll(`colgroup col:nth-child(${[...headers].indexOf(th) + 1})`);
-        if (cols.length) cols[0].style.width = `${newWidth}px`;
+        th.style.minWidth = `${newWidth}px`;
       };
       const onMouseUp = () => {
         document.removeEventListener('mousemove', onMouseMove);

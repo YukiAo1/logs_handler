@@ -317,9 +317,15 @@ th .resize-handle {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 5px;
+  width: 6px;
   cursor: col-resize;
   user-select: none;
+  z-index: 2;
+}
+
+th .resize-handle:hover,
+th .resize-handle:active {
+  background: rgba(100, 180, 255, 0.3);
 }
 
 th {
