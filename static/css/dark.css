@@ -296,8 +296,15 @@ html, body {
   padding: 4px 8px;
   font-size: 12px;
   border-bottom: 1px solid rgba(15, 52, 96, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#logTable td.col-msg-cell {
   white-space: pre-wrap;
   word-break: break-all;
+  overflow: visible;
 }
 
 #logTable tbody tr:hover {
@@ -336,6 +343,7 @@ th:hover .resize-handle {
 .col-actions {
   text-align: center;
   white-space: nowrap;
+  min-width: 80px;
 }
 
 .col-actions .action-wrap {
