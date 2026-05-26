@@ -114,6 +114,7 @@ def search(
                 'tag': entry.tag,
                 'message': entry.message,
                 'raw': entry.raw,
+                'file_path': index.path,
             })
 
     return results, total

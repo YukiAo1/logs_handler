@@ -161,6 +161,38 @@ def sample_lines(path: str = '', offset: int = 0, limit: int = 20):
     return {'lines': lines, 'offset': offset, 'limit': limit, 'total_lines': idx.total_lines}
 
 
+@router.get('/context')
+def context_lines(path: str = '', line_no: int = 1, before: int = 200, after: int = 200):
+    path = os.path.normpath(path)
+    idx = _file_indexes.get(path)
+    if not idx:
+        raise HTTPException(status_code=404, detail='文件未加载')
+    zero_based = max(0, line_no - 1 - before)
+    end = min(line_no - 1 + after + 1, idx.total_lines)
+    lines = []
+    for ln in range(zero_based, end):
+        raw = read_raw_line(idx, ln)
+        entry = parse_line(raw, ln, idx.offsets[ln])
+        if entry:
+            lines.append({
+                'line_no': entry.line_no,
+                'date': entry.date,
+                'time': entry.time,
+                'pid': entry.pid,
+                'tid': entry.tid,
+                'level': entry.level,
+                'tag': entry.tag,
+                'message': entry.message,
+                'raw': entry.raw,
+            })
+    return {
+        'lines': lines,
+        'center_line': line_no,
+        'total_lines': idx.total_lines,
+        'file_path': path,
+    }
+
+
 _upload_dir = os.path.join(APP_DIR, 'uploads')
 os.makedirs(_upload_dir, exist_ok=True)
 

@@ -5,7 +5,7 @@ const Table = {
     this.currentPattern = pattern || '';
     const tbody = document.getElementById('logTableBody');
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2)">无匹配结果</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text2)">无匹配结果</td></tr>';
       return;
     }
 
@@ -21,12 +21,131 @@ const Table = {
         `<td>${item.tid}</td>`,
         `<td>${escapeHtml(item.tag)}</td>`,
         `<td>${this._highlight(item.message, item.raw)}</td>`,
+        `<td class="col-actions">
+          <span class="action-btn" onclick="Table.copyRow(this)">复制</span>
+          <span class="action-btn" onclick="Table.showTrace(this)">跟踪</span>
+        </td>`,
       ].join('');
+      // 保存 item 数据供复制和跟踪使用
+      tr.dataset.item = JSON.stringify(item);
       frag.appendChild(tr);
     }
 
     tbody.innerHTML = '';
     tbody.appendChild(frag);
+  },
+
+  copyRow(btn) {
+    const tr = btn.closest('tr');
+    if (!tr) return;
+    const item = JSON.parse(tr.dataset.item || '{}');
+    const text = [
+      `行号: ${item.line_no}`,
+      `日期: ${item.date}`,
+      `时间: ${item.time}`,
+      `级别: ${item.level}`,
+      `PID: ${item.pid}`,
+      `TID: ${item.tid}`,
+      `Tag: ${item.tag}`,
+      `消息: ${item.message}`,
+    ].join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '已复制';
+      setTimeout(() => { btn.textContent = '复制'; }, 1500);
+    }).catch(() => {
+      // 降级方案
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '已复制';
+      setTimeout(() => { btn.textContent = '复制'; }, 1500);
+    });
+  },
+
+  async showTrace(btn) {
+    const tr = btn.closest('tr');
+    if (!tr) return;
+    const item = JSON.parse(tr.dataset.item || '{}');
+    if (!item.file_path) {
+      showToast('无法获取文件路径', 'error');
+      return;
+    }
+    try {
+      btn.textContent = '加载中...';
+      const result = await API.get('/api/files/context', {
+        path: item.file_path,
+        line_no: item.line_no,
+        before: 200,
+        after: 200,
+      });
+      btn.textContent = '跟踪';
+      this._showTraceModal(result);
+    } catch (e) {
+      btn.textContent = '跟踪';
+      showToast('跟踪失败: ' + e.message, 'error');
+    }
+  },
+
+  _showTraceModal(result) {
+    const overlay = document.getElementById('modalOverlay');
+    const box = document.getElementById('modalBox');
+    const center = result.center_line;
+
+    const rows = result.lines.map(line => {
+      const cls = line.line_no === center ? 'trace-row trace-center' : 'trace-row';
+      return `<tr class="${cls}">
+        <td class="trace-lno">${line.line_no}</td>
+        <td>${escapeHtml(line.date)} ${escapeHtml(line.time)}</td>
+        <td><span class="level-badge level-${line.level}">${line.level}</span></td>
+        <td>${line.pid}</td>
+        <td>${line.tid}</td>
+        <td>${escapeHtml(line.tag)}</td>
+        <td>${escapeHtml(line.message)}</td>
+      </tr>`;
+    }).join('');
+
+    box.innerHTML = `
+      <div class="trace-modal">
+        <div class="trace-header">
+          <h3>日志跟踪 - 行 ${center}</h3>
+          <span class="trace-file">${escapeHtml(result.file_path)}</span>
+          <span class="trace-count">显示 ${result.lines.length} 行 / 共 ${result.total_lines.toLocaleString()} 行</span>
+        </div>
+        <div class="trace-body">
+          <table class="trace-table">
+            <thead>
+              <tr>
+                <th class="trace-lno">行号</th>
+                <th>时间</th>
+                <th>级别</th>
+                <th>PID</th>
+                <th>TID</th>
+                <th>Tag</th>
+                <th>消息</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="trace-footer">
+          <button class="btn" id="modalCancel">关闭</button>
+        </div>
+      </div>
+    `;
+
+    overlay.style.display = '';
+    document.getElementById('modalCancel').onclick = () => { overlay.style.display = 'none'; };
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
+
+    // 滚动到中心行
+    setTimeout(() => {
+      const tbody = box.querySelector('.trace-table tbody');
+      const centerRow = tbody.querySelector('.trace-center');
+      if (centerRow) centerRow.scrollIntoView({ block: 'center' });
+    }, 50);
   },
 
   _highlight(message, raw) {

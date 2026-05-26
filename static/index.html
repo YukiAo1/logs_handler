@@ -49,7 +49,7 @@
       <input type="text" id="filterTag" class="filter-input filter-tag" placeholder="模糊匹配" onchange="Search.onFilterChange()">
     </div>
     <div class="filter-group">
-      <input type="text" id="filterKeyword" class="filter-input filter-tag" placeholder="临时关键字/正则" onkeydown="if(event.key==='Enter')Search.onFilterChange()">
+      <input type="text" id="filterKeyword" class="filter-input filter-keyword" placeholder="临时关键字/正则" onkeydown="if(event.key==='Enter')Search.onFilterChange()">
     </div>
     <button class="btn btn-primary" onclick="Search.onFilterChange()">🔍 搜索</button>
     <button class="btn" onclick="Search.clearFilters()">✕ 清除</button>
@@ -93,6 +93,7 @@
               <col style="width:58px">
               <col style="width:200px">
               <col>
+              <col style="width:90px">
             </colgroup>
             <thead>
               <tr>
@@ -104,6 +105,7 @@
                 <th class="col-tid">TID</th>
                 <th class="col-tag">Tag</th>
                 <th class="col-msg">消息</th>
+                <th class="col-actions">操作</th>
               </tr>
             </thead>
             <tbody id="logTableBody"></tbody>

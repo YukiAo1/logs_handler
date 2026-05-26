@@ -123,6 +123,7 @@ html, body {
 .filter-time { width: 140px; }
 .filter-short { width: 60px; }
 .filter-tag { width: 120px; }
+.filter-keyword { width: 360px; }
 
 .toolbar-info {
   color: var(--text2);
@@ -332,6 +333,30 @@ th:hover .resize-handle {
   background: rgba(100, 180, 255, 0.15);
 }
 
+.col-actions {
+  text-align: center;
+}
+
+.col-actions .action-btn {
+  display: inline-block;
+  padding: 2px 6px;
+  margin: 0 2px;
+  font-size: 11px;
+  line-height: 1.4;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--accent2);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.col-actions .action-btn:hover {
+  background: rgba(100, 180, 255, 0.15);
+  border-color: var(--accent1);
+}
+
 .level-badge {
   display: inline-block;
   width: 24px;
@@ -488,6 +513,11 @@ input:focus, textarea:focus, select:focus {
   overflow-y: auto;
 }
 
+.modal:has(.trace-modal) {
+  max-width: 90vw;
+  min-width: 800px;
+}
+
 .modal h3 {
   font-size: 15px;
   margin-bottom: 16px;
@@ -521,6 +551,97 @@ input:focus, textarea:focus, select:focus {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+.trace-modal {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+}
+
+.trace-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.trace-header h3 {
+  margin: 0;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.trace-file {
+  font-size: 11px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-count {
+  font-size: 11px;
+  color: var(--text2);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.trace-body {
+  flex: 1;
+  overflow: auto;
+  margin: 8px 0;
+}
+
+.trace-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.trace-table th {
+  background: var(--panel);
+  color: var(--accent2);
+  font-weight: 600;
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.trace-table td {
+  padding: 3px 6px;
+  border-bottom: 1px solid rgba(15, 52, 96, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trace-table .trace-lno {
+  width: 50px;
+  text-align: right;
+  color: var(--text2);
+  font-family: Consolas, monospace;
+}
+
+.trace-table .trace-center {
+  background: rgba(100, 180, 255, 0.12);
+}
+
+.trace-table .trace-center td {
+  border-bottom-color: rgba(100, 180, 255, 0.3);
+}
+
+.trace-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 
 .toast-container {
