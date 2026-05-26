@@ -76,8 +76,8 @@ const Files = {
       const rel = f.webkitRelativePath || '';
       // 深度 = 路径分隔符数量（/ 或 \）
       const depth = (rel.match(/[/\\]/g) || []).length;
-      // 文件夹选择器：根文件 depth=0，子文件夹 depth>=1
-      if (depth === 0) {
+      // 文件夹选择器：根文件 depth=1（格式：文件夹名/file.log），子文件夹 depth>=2
+      if (depth === 1) {
         valid.push(f);
       } else {
         skipped.push(`${f.name} (depth=${depth})`);
