@@ -347,7 +347,7 @@ th:hover .resize-handle {
 .col-actions {
   text-align: center;
   white-space: nowrap;
-  min-width: 80px;
+  min-width: 100px;
 }
 
 .col-actions .action-wrap {
