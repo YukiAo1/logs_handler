@@ -3,7 +3,7 @@ import re
 
 from fastapi import APIRouter, HTTPException, UploadFile, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 from storage.database import get_db
 from storage.models import FilterRule, now_iso
@@ -29,16 +29,6 @@ class RuleMove(BaseModel):
     rule_id: int
     target_group: str = ''
     target_order: int = 0
-
-    @field_validator('target_order', mode='before')
-    @classmethod
-    def coerce_target_order(cls, v):
-        if isinstance(v, str):
-            try:
-                return int(v)
-            except ValueError:
-                raise ValueError('target_order must be a valid integer')
-        return v
 
 
 def _validate_pattern(pattern: str):
@@ -138,23 +128,26 @@ def delete_rule(rule_id: int):
 
 
 @router.put('/move')
-def move_rule(body: RuleMove):
+def move_rule(body: dict):
+    rule_id = int(body.get('rule_id', 0))
+    target_group = str(body.get('target_group', ''))
+    target_order = int(body.get('target_order', 0))
+
     db = get_db()
-    src = db.execute('SELECT * FROM filter_rules WHERE id = ?', (body.rule_id,)).fetchone()
+    src = db.execute('SELECT * FROM filter_rules WHERE id = ?', (rule_id,)).fetchone()
     if not src:
         raise HTTPException(status_code=404, detail='规则不存在')
     ts = now_iso()
 
     tgt = db.execute(
         'SELECT id, sort_order FROM filter_rules WHERE id != ? AND sort_order = ? LIMIT 1',
-        (body.rule_id, body.target_order),
+        (rule_id, target_order),
     ).fetchone()
 
     if tgt:
-        # 交换 sort_order，同时更新 group_name
         db.execute(
             'UPDATE filter_rules SET sort_order=?, group_name=?, updated_at=? WHERE id=?',
-            (tgt['sort_order'], body.target_group.strip(), ts, body.rule_id),
+            (tgt['sort_order'], target_group, ts, rule_id),
         )
         db.execute(
             'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
@@ -163,7 +156,7 @@ def move_rule(body: RuleMove):
     else:
         db.execute(
             'UPDATE filter_rules SET sort_order=?, group_name=?, updated_at=? WHERE id=?',
-            (body.target_order, body.target_group.strip(), ts, body.rule_id),
+            (target_order, target_group, ts, rule_id),
         )
 
     db.commit()
