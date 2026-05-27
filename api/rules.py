@@ -116,6 +116,16 @@ def update_rule(rule_id: int, body: RuleUpdate):
     return rule.to_dict()
 
 
+@router.delete('/group')
+def delete_group(group_name: str = Query('')):
+    if not group_name.strip():
+        raise HTTPException(status_code=400, detail='目录名称不能为空')
+    db = get_db()
+    db.execute('DELETE FROM filter_rules WHERE group_name = ?', (group_name.strip(),))
+    db.commit()
+    return {'ok': True}
+
+
 @router.delete('/{rule_id}')
 def delete_rule(rule_id: int):
     db = get_db()
@@ -163,16 +173,6 @@ async def move_rule(request: Request):
             (target_order, target_group, ts, rule_id),
         )
 
-    db.commit()
-    return {'ok': True}
-
-
-@router.delete('/group')
-def delete_group(group_name: str = Query('')):
-    if not group_name.strip():
-        raise HTTPException(status_code=400, detail='目录名称不能为空')
-    db = get_db()
-    db.execute('DELETE FROM filter_rules WHERE group_name = ?', (group_name.strip(),))
     db.commit()
     return {'ok': True}
 
