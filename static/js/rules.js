@@ -161,23 +161,36 @@ const Rules = {
         if (!src || src === el) return;
 
         const srcId = parseInt(src.dataset.id);
-        const tgtId = parseInt(el.dataset.id);
-        if (isNaN(srcId) || isNaN(tgtId)) return;
+        if (isNaN(srcId)) return;
+
+        const isGroupHeader = el.matches('.rule-group-header');
+        const tgtId = isGroupHeader ? null : parseInt(el.dataset.id);
 
         const srcRule = App.state.rules.find(r => r.id === srcId);
-        const tgtRule = App.state.rules.find(r => r.id === tgtId);
-        if (!srcRule || !tgtRule) return;
+        if (!srcRule) return;
 
-        const srcGroup = src.dataset.group || '';
-        const tgtGroup = el.matches('.rule-group-header')
-          ? (el.closest('.rule-group')?.dataset?.group || '')
-          : (el.dataset.group || '');
+        let targetGroup;
+        let targetOrder;
+
+        if (isGroupHeader) {
+          // 拖到目录头 → 进入该目录
+          targetGroup = el.closest('.rule-group')?.dataset?.group || '';
+          targetOrder = 0;
+        } else if (!isNaN(tgtId)) {
+          // 拖到另一个规则 → 交换位置
+          const tgtRule = App.state.rules.find(r => r.id === tgtId);
+          if (!tgtRule) return;
+          targetGroup = el.dataset.group || '';
+          targetOrder = tgtRule.sort_order;
+        } else {
+          return;
+        }
 
         try {
           await API.put('/api/rules/move', {
             rule_id: srcId,
-            target_group: tgtGroup,
-            target_order: tgtRule.sort_order,
+            target_group: targetGroup,
+            target_order: targetOrder,
           });
           showToast('规则已移动', 'success');
           await this.loadRules();
