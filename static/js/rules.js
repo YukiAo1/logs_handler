@@ -300,6 +300,9 @@ const Rules = {
 
   showEditDialog(rule) {
     const groups = [...new Set(this._groups.map(g => g.group_name).filter(Boolean))];
+    const groupOpts = groups.map(g =>
+      `<option value="${escapeHtml(g)}"${g === rule.group_name ? ' selected' : ''}>${escapeHtml(g)}</option>`
+    ).join('');
 
     const bodyHtml = `
       <div class="form-group">
@@ -312,7 +315,15 @@ const Rules = {
       </div>
       <div class="form-group">
         <label>所属目录</label>
-        <input id="ruleGroupName" value="${escapeHtml(rule.group_name || '')}" placeholder="留空则不分组，输入目录名称" maxlength="30">
+        <select id="ruleGroup">
+          <option value="">（不分组，平铺显示）</option>
+          ${groupOpts}
+          <option value="__new__">新建目录...</option>
+        </select>
+      </div>
+      <div id="ruleNewGroupWrap" class="form-group" style="display:none">
+        <label>新目录名称</label>
+        <input id="ruleNewGroup" placeholder="输入目录名称" maxlength="30">
       </div>
       <div class="form-group">
         <label>备注（可选）</label>
@@ -323,7 +334,10 @@ const Rules = {
       const name = box.querySelector('#ruleName').value.trim();
       const pattern = box.querySelector('#rulePattern').value.trim();
       const description = box.querySelector('#ruleDesc').value.trim();
-      const group_name = box.querySelector('#ruleGroupName').value.trim();
+      let group_name = box.querySelector('#ruleGroup').value;
+      if (group_name === '__new__') {
+        group_name = box.querySelector('#ruleNewGroup').value.trim();
+      }
       if (!name) throw new Error('请输入规则名称');
       if (!pattern) throw new Error('请输入正则表达式');
       try {
@@ -340,6 +354,16 @@ const Rules = {
         throw e;
       }
     });
+
+    setTimeout(() => {
+      const sel = document.getElementById('ruleGroup');
+      const wrap = document.getElementById('ruleNewGroupWrap');
+      if (sel && wrap) {
+        sel.addEventListener('change', () => {
+          wrap.style.display = sel.value === '__new__' ? '' : 'none';
+        });
+      }
+    }, 50);
   },
 
   async showCreateGroupDialog() {

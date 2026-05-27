@@ -108,6 +108,8 @@ async def move_rule(request: Request):
     src = db.execute('SELECT * FROM filter_rules WHERE id = ?', (rule_id,)).fetchone()
     if not src:
         raise HTTPException(status_code=404, detail='规则不存在')
+
+    src_group = src['group_name'] or ''
     ts = now_iso()
 
     tgt = db.execute(
@@ -128,6 +130,28 @@ async def move_rule(request: Request):
         db.execute(
             'UPDATE filter_rules SET sort_order=?, group_name=?, updated_at=? WHERE id=?',
             (target_order, target_group, ts, rule_id),
+        )
+
+    # 源目录如果没有真实规则了，插入占位规则保持目录可见
+    if src_group and src_group != target_group:
+        remaining = db.execute(
+            'SELECT COUNT(*) FROM filter_rules WHERE group_name = ? AND name NOT LIKE ? AND id != ?',
+            (src_group, '__group_placeholder__%', rule_id),
+        ).fetchone()[0]
+        if remaining == 0:
+            max_order = db.execute(
+                'SELECT COALESCE(MAX(sort_order), -1) + 1 FROM filter_rules'
+            ).fetchone()[0]
+            db.execute(
+                'INSERT INTO filter_rules (name, pattern, description, group_name, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                (f'__group_placeholder__{src_group}', '.^', '', src_group, max_order, ts, ts),
+            )
+
+    # 目标目录如果有占位规则，清理掉
+    if target_group and src_group != target_group:
+        db.execute(
+            'DELETE FROM filter_rules WHERE group_name = ? AND name LIKE ?',
+            (target_group, '__group_placeholder__%'),
         )
 
     db.commit()
