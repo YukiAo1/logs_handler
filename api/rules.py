@@ -102,7 +102,7 @@ async def move_rule(request: Request):
         raise HTTPException(status_code=400, detail='请求体不是有效的 JSON')
     rule_id = int(body.get('rule_id', 0))
     target_group = str(body.get('target_group', ''))
-    target_order = int(body.get('target_order', 0))
+    target_order = int(body.get('target_order', -1))
 
     db = get_db()
     src = db.execute('SELECT * FROM filter_rules WHERE id = ?', (rule_id,)).fetchone()
@@ -111,6 +111,14 @@ async def move_rule(request: Request):
 
     src_group = src['group_name'] or ''
     ts = now_iso()
+
+    # target_order == -1 表示放在目标目录末尾
+    if target_order == -1 and target_group:
+        max_in_group = db.execute(
+            'SELECT COALESCE(MAX(sort_order), -1) FROM filter_rules WHERE group_name = ? AND id != ?',
+            (target_group, rule_id),
+        ).fetchone()[0]
+        target_order = max_in_group + 1
 
     tgt = db.execute(
         'SELECT id, sort_order FROM filter_rules WHERE id != ? AND sort_order = ? LIMIT 1',
@@ -132,19 +140,16 @@ async def move_rule(request: Request):
             (target_order, target_group, ts, rule_id),
         )
 
-    # 源目录如果没有真实规则了，插入占位规则保持目录可见
+    # 源目录如果没有真实规则了，插入占位规则保持目录位置
     if src_group and src_group != target_group:
         remaining = db.execute(
             'SELECT COUNT(*) FROM filter_rules WHERE group_name = ? AND name NOT LIKE ? AND id != ?',
             (src_group, '__group_placeholder__%', rule_id),
         ).fetchone()[0]
         if remaining == 0:
-            max_order = db.execute(
-                'SELECT COALESCE(MAX(sort_order), -1) + 1 FROM filter_rules'
-            ).fetchone()[0]
             db.execute(
                 'INSERT INTO filter_rules (name, pattern, description, group_name, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                (f'__group_placeholder__{src_group}', '.^', '', src_group, max_order, ts, ts),
+                (f'__group_placeholder__{src_group}', '.^', '', src_group, src['sort_order'], ts, ts),
             )
 
     # 目标目录如果有占位规则，清理掉
@@ -153,6 +158,66 @@ async def move_rule(request: Request):
             'DELETE FROM filter_rules WHERE group_name = ? AND name LIKE ?',
             (target_group, '__group_placeholder__%'),
         )
+
+    db.commit()
+    return {'ok': True}
+
+
+@router.put('/move_group')
+async def move_group(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail='请求体不是有效的 JSON')
+    src_group = str(body.get('src_group', ''))
+    tgt_group = str(body.get('tgt_group', ''))
+
+    if not src_group or not tgt_group:
+        raise HTTPException(status_code=400, detail='目录名称不能为空')
+    if src_group == tgt_group:
+        return {'ok': True}
+
+    db = get_db()
+    # 交换两个目录所有规则的 sort_order
+    src_rules = db.execute(
+        'SELECT id, sort_order FROM filter_rules WHERE group_name = ? ORDER BY sort_order ASC, id ASC',
+        (src_group,)
+    ).fetchall()
+    tgt_rules = db.execute(
+        'SELECT id, sort_order FROM filter_rules WHERE group_name = ? ORDER BY sort_order ASC, id ASC',
+        (tgt_group,)
+    ).fetchall()
+
+    if not src_rules or not tgt_rules:
+        raise HTTPException(status_code=400, detail='目录不存在或为空')
+
+    ts = now_iso()
+    min_len = min(len(src_rules), len(tgt_rules))
+    # 交换对应位置的 sort_order
+    for i in range(min_len):
+        db.execute(
+            'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
+            (tgt_rules[i]['sort_order'], ts, src_rules[i]['id']),
+        )
+        db.execute(
+            'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
+            (src_rules[i]['sort_order'], ts, tgt_rules[i]['id']),
+        )
+    # 如果规则数量不同，剩余规则移到对方末尾
+    if len(src_rules) > min_len:
+        base = tgt_rules[-1]['sort_order'] + 1 if tgt_rules else 0
+        for i in range(min_len, len(src_rules)):
+            db.execute(
+                'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
+                (base + i - min_len, ts, src_rules[i]['id']),
+            )
+    elif len(tgt_rules) > min_len:
+        base = src_rules[-1]['sort_order'] + 1 if src_rules else 0
+        for i in range(min_len, len(tgt_rules)):
+            db.execute(
+                'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
+                (base + i - min_len, ts, tgt_rules[i]['id']),
+            )
 
     db.commit()
     return {'ok': True}

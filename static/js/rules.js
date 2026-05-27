@@ -189,11 +189,27 @@ const Rules = {
         const src = this._dragSrc;
         if (!src || src === el) return;
 
+        const srcIsGroup = src.matches('.rule-group-header');
+        const tgtIsGroup = el.matches('.rule-group-header');
+
+        // 目录头 → 目录头：交换目录位置
+        if (srcIsGroup && tgtIsGroup) {
+          const srcGroup = src.closest('.rule-group')?.dataset?.group || '';
+          const tgtGroup = el.closest('.rule-group')?.dataset?.group || '';
+          if (!srcGroup || !tgtGroup) return;
+          try {
+            await API.put('/api/rules/move_group', { src_group: srcGroup, tgt_group: tgtGroup });
+            showToast('目录已换位', 'success');
+            await this.loadRules();
+          } catch (err) {
+            showToast('移动目录失败: ' + (err.message || JSON.stringify(err)), 'error');
+          }
+          return;
+        }
+
+        // 规则 → 规则 或 规则 → 目录头
         const srcId = parseInt(src.dataset.id, 10);
         if (isNaN(srcId)) return;
-
-        const isGroupHeader = el.matches('.rule-group-header');
-        const tgtId = isGroupHeader ? null : parseInt(el.dataset.id, 10);
 
         const srcRule = App.state.rules.find(r => r.id === srcId);
         if (!srcRule) return;
@@ -201,18 +217,16 @@ const Rules = {
         let targetGroup;
         let targetOrder;
 
-        if (isGroupHeader) {
+        if (tgtIsGroup) {
           targetGroup = el.closest('.rule-group')?.dataset?.group || '';
-          // 取目标目录中所有规则的最大 sort_order + 1，放在末尾
-          const groupRules = App.state.rules.filter(r => (r.group_name || '') === targetGroup);
-          targetOrder = groupRules.reduce((max, r) => Math.max(max, Number(r.sort_order) || 0), 0) + 1;
-        } else if (!isNaN(tgtId)) {
+          targetOrder = -1;  // 信号量：放在目标目录末尾
+        } else {
+          const tgtId = parseInt(el.dataset.id, 10);
+          if (isNaN(tgtId)) return;
           const tgtRule = App.state.rules.find(r => r.id === tgtId);
           if (!tgtRule) return;
           targetGroup = el.dataset.group || '';
           targetOrder = Number(tgtRule.sort_order) || 0;
-        } else {
-          return;
         }
 
         try {
