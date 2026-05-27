@@ -1,3 +1,12 @@
+function _extractError(err) {
+  if (!err) return '未知错误';
+  if (typeof err.detail === 'string') return err.detail;
+  if (Array.isArray(err.detail) && err.detail.length > 0) {
+    return err.detail.map(e => e.msg || JSON.stringify(e)).join('; ');
+  }
+  return err.detail || err.message || err.statusText || '未知错误';
+}
+
 const API = {
   base: '',
 
@@ -7,7 +16,7 @@ const API = {
     const res = await fetch(fullUrl);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || res.statusText);
+      throw new Error(_extractError(err));
     }
     return res.json();
   },
@@ -20,7 +29,7 @@ const API = {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || res.statusText);
+      throw new Error(_extractError(err));
     }
     return res.json();
   },
@@ -33,7 +42,7 @@ const API = {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || res.statusText);
+      throw new Error(_extractError(err));
     }
     return res.json();
   },
@@ -42,7 +51,7 @@ const API = {
     const res = await fetch(url, { method: 'DELETE' });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || res.statusText);
+      throw new Error(_extractError(err));
     }
     return res.json();
   },
@@ -56,7 +65,7 @@ const API = {
     const res = await fetch(url, { method: 'POST', body: form });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || res.statusText);
+      throw new Error(_extractError(err));
     }
     return res.json();
   },
@@ -69,7 +78,7 @@ const API = {
     const res = await fetch(url, { method: 'POST', body: form });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || res.statusText);
+      throw new Error(_extractError(err));
     }
     return res.json();
   },

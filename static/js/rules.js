@@ -1,8 +1,16 @@
 const Rules = {
   _groups: [],
 
+  _isPlaceholder(r) {
+    return r.name && r.name.startsWith('__group_placeholder__');
+  },
+
   _flatten(groups) {
     this._groups = groups;
+    // 过滤掉占位规则
+    for (const g of groups) {
+      g.rules = g.rules.filter(r => !this._isPlaceholder(r));
+    }
     const flat = [];
     for (const g of groups) {
       for (const r of g.rules) {
@@ -41,10 +49,11 @@ const Rules = {
       if (kw) {
         filtered = rules.filter(r => r.name.toLowerCase().includes(kw));
       }
-      if (filtered.length === 0) continue;
 
       if (group.group_name) {
+        // 有名字的目录始终显示（即使空目录）
         const expanded = this._isGroupExpanded(group.group_name);
+        if (kw && filtered.length === 0) continue;
         html += `<div class="rule-group" data-group="${escapeHtml(group.group_name)}">
           <div class="rule-group-header" draggable="true">
             <span class="rule-group-toggle">${expanded ? '▼' : '▶'}</span>
@@ -52,10 +61,11 @@ const Rules = {
             <span class="rule-group-count">${filtered.length}</span>
           </div>
           <div class="rule-group-body" style="display:${expanded ? '' : 'none'}">
-            ${filtered.map(r => this._renderRuleItem(r)).join('')}
+            ${filtered.length ? filtered.map(r => this._renderRuleItem(r)).join('') : ''}
           </div>
         </div>`;
       } else {
+        if (filtered.length === 0) continue;
         for (const r of filtered) {
           html += this._renderRuleItem(r);
         }
@@ -187,7 +197,7 @@ const Rules = {
         }
 
         try {
-          await API.put('/api/rules/move', {
+          const result = await API.put('/api/rules/move', {
             rule_id: srcId,
             target_group: targetGroup,
             target_order: targetOrder,
@@ -195,7 +205,7 @@ const Rules = {
           showToast('规则已移动', 'success');
           await this.loadRules();
         } catch (err) {
-          showToast('移动失败: ' + err.message, 'error');
+          showToast('移动失败: ' + (err.message || JSON.stringify(err)), 'error');
         }
       });
     });
