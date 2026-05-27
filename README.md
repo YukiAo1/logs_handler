@@ -1,6 +1,6 @@
-# 鸿蒙日志分析工具 v2.0
+# 鸿蒙日志分析工具 v3.0
 
-基于 FastAPI + SQLite 的本地鸿蒙日志分析工具，提供日志加载、多级筛选、经典场景记录、双文件对比、结果导出等功能，支持 PyInstaller 打包为独立 exe。
+基于 FastAPI + SQLite 的本地鸿蒙日志分析工具，提供日志加载、多级筛选、规则分组管理、经典场景记录、双文件对比、结果导出等功能，支持 PyInstaller 打包为独立 exe。
 
 ## 功能总览
 
@@ -8,7 +8,7 @@
 |------|------|
 | 📂 文件管理 | 拖拽/选择/文件夹加载 .log/.txt，mmap 行偏移索引，支持大文件 |
 | 🔍 搜索筛选 | 级别/时间/PID/TID/Tag/关键字(正则)多级组合筛选，规则一键搜索 |
-| 📋 规则管理 | 正则规则 CRUD，支持 JSON 导入导出 |
+| 📋 规则管理 | 正则规则 CRUD，**分组目录管理**，**拖拽排列**，**模糊搜索**，支持 JSON 导入导出 |
 | 📌 经典场景 | 记录核心日志+备注，自动匹配标记💡，弹窗查看往期结论 |
 | 📊 日志对比 | 双文件规则命中差异 + 级别分布对比 |
 | 📤 结果导出 | TXT 原始日志 / JSON 结构化数据导出 |
@@ -61,11 +61,29 @@ python -m PyInstaller build.spec --clean --noconfirm
 
 文件加载后会在下方显示文件列表，包含文件大小、行数、时间范围。
 
-### 2. 创建筛选规则
+### 2. 创建筛选规则（v3.0 增强）
 
-左侧「筛选规则」面板 → 点击「+ 新建」→ 输入规则名称和正则表达式。
+左侧「筛选规则」面板提供完整的规则管理功能：
 
-示例规则：
+#### 规则分组
+
+- 创建规则时可选择**所属目录**（下拉选择已有目录或新建目录）
+- 有目录的规则收起在目录标题下，点击 ▶/▼ 折叠/展开
+- 不带目录的规则**平铺**在面板最上层
+- 目录标题右侧显示该目录下的规则数量
+- 面板底部提供 **「📁 新建目录」** 按钮，可先创建空目录再往里加规则
+
+#### 拖拽排列
+
+- **规则拖到规则**：交换位置
+- **规则拖到目录头**：规则移入该目录并放在末尾
+- **目录头拖到目录头**：两个目录整体交换顺序
+
+#### 实时搜索
+
+面板顶部有搜索输入框，输入文字实时模糊匹配规则名称，无关规则自动隐藏。
+
+#### 示例规则
 
 | 名称 | 正则 | 说明 |
 |------|------|------|
@@ -81,7 +99,7 @@ python -m PyInstaller build.spec --clean --noconfirm
 
 | 控件 | 说明 |
 |------|------|
-| 级别复选框 | 勾选 V/D/I/W/E/F，默认 I/W/E/F |
+| 级别复选框 | D / I / W / E，默认 I / W / E |
 | 时间范围 | `MM-DD HH:MM:SS.mmm` 格式 |
 | PID / TID | 精确匹配进程/线程 ID |
 | Tag | 模糊匹配日志 Tag |
@@ -109,7 +127,7 @@ python -m PyInstaller build.spec --clean --noconfirm
 - **正则过滤输入框**：实时输入过滤表格行，统计显示 `过滤行数/总行数`
 - 中心行（选中行）浅蓝色高亮，自动滚动到居中位置
 
-### 5. 经典场景（v2.0 新增）
+### 5. 经典场景
 
 #### 记录场景
 
@@ -158,7 +176,7 @@ Tips：往期记录结论仅做参考！（红色字体）
 - 选择要对比的规则
 - 点击「开始对比」
 - 查看规则命中差异（绿色增加/红色减少）
-- 查看 V/D/I/W/E/F 级别分布变化
+- 查看 D / I / W / E 级别分布变化
 
 ### 7. 导出结果
 
@@ -172,10 +190,13 @@ Tips：往期记录结论仅做参考！（红色字体）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/rules` | 获取规则列表 |
-| POST | `/api/rules` | 创建规则 |
+| GET | `/api/rules` | 获取规则列表（按分组 + sort_order 排序） |
+| POST | `/api/rules` | 创建规则（支持 group_name） |
 | PUT | `/api/rules/{id}` | 更新规则 |
-| DELETE | `/api/rules/{id}` | 删除规则 |
+| PUT | `/api/rules/move` | 移动规则（跨目录 + 交换位置） |
+| PUT | `/api/rules/move_group` | 交换两个目录的顺序 |
+| DELETE | `/api/rules/{id}` | 删除单条规则 |
+| DELETE | `/api/rules/group` | 删除整个目录（含其下所有规则） |
 | GET | `/api/rules/export` | 导出规则为 JSON |
 | POST | `/api/rules/import/upload` | 从 JSON 导入规则 |
 | POST | `/api/files/open` | 加载日志文件/目录 |
@@ -199,13 +220,13 @@ Tips：往期记录结论仅做参考！（红色字体）
 ### 搜索 API 参数
 
 ```
-GET /api/search?rule_id=1&level=E,F&pid=8001&keyword=crash&time_start=05-22%2017:30:00.000&offset=0&limit=500
+GET /api/search?rule_id=1&level=E,W&pid=8001&keyword=crash&time_start=05-22%2017:30:00.000&offset=0&limit=500
 ```
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `rule_id` | int | 已保存规则 ID |
-| `level` | string | 逗号分隔级别，如 `E,F` |
+| `level` | string | 逗号分隔级别，如 `E,W` |
 | `pid` | int | 精确 PID |
 | `tid` | int | 精确 TID |
 | `tag` | string | Tag 模糊匹配 |
@@ -235,6 +256,8 @@ GET /api/files/context?path=xxx.log&line_no=100&before=200&after=200
 ```
 MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
 ```
+
+可用级别：**D**（Debug） / **I**（Info） / **W**（Warn） / **E**（Error）
 
 示例：
 
@@ -271,14 +294,14 @@ logs_handler/
 │   ├── filter_engine.py # 多级筛选引擎
 │   └── comparator.py    # 对比引擎（规则命中 + 级别分布）
 ├── api/
-│   ├── rules.py         # 规则 CRUD + 导入导出
+│   ├── rules.py         # 规则 CRUD + 分组/拖拽/导入导出
 │   ├── files.py         # 文件加载/卸载/采样/上下文
 │   ├── search.py        # 搜索筛选
 │   ├── compare.py       # 日志对比
 │   ├── export.py        # 结果导出
 │   └── scenarios.py     # 经典场景 CRUD + 导入导出 + 批量匹配
 ├── storage/
-│   ├── database.py      # SQLite 连接管理 + 建表
+│   ├── database.py      # SQLite 连接管理 + 建表 + v2→v3 自动迁移
 │   └── models.py        # 数据模型（FilterRule, ClassicScenario）
 ├── static/
 │   ├── index.html       # 深色主题 SPA
@@ -288,7 +311,7 @@ logs_handler/
 │       ├── app.js       # 应用状态管理
 │       ├── table.js     # 表格渲染 + 操作列 + 跟踪弹窗
 │       ├── search.js    # 搜索筛选逻辑
-│       ├── rules.js     # 规则管理
+│       ├── rules.js     # 规则管理（分组/拖拽/搜索）
 │       ├── files.js     # 文件加载
 │       ├── export.js    # 导出功能
 │       ├── compare.js   # 对比功能
@@ -298,13 +321,12 @@ logs_handler/
     └── clear.bat        # 端口清理脚本
 ```
 
-## 技术栈
+## v3.0 更新日志
 
-- **后端**: FastAPI + Uvicorn + SQLite
-- **前端**: Vanilla JS（无框架依赖）+ 深色主题 CSS
-- **引擎**: mmap 内存映射 + array('Q') 行偏移索引 + re 正则缓存
-- **打包**: PyInstaller 6.x, 单文件 exe ~15MB
-
-## License
-
-MIT
+- **规则分组管理**：两级结构（目录→规则），空目录自动保持可见
+- **拖拽排列**：规则间交换位置、规则拖入目录、目录整体换序
+- **实时搜索**：规则面板顶部搜索框，模糊匹配规则名称
+- **独立新建目录**：可直接创建空目录，后续再往里添加规则
+- **编辑弹框增强**：目录字段改为下拉选择 + 新建目录选项
+- **数据库迁移**：旧版数据库自动升级，新增 `group_name` / `sort_order` 字段
+- **目录删除**：支持一键删除目录及其下所有规则
