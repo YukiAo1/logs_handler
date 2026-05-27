@@ -393,26 +393,24 @@ const Rules = {
   },
 };
 
-function initRuleSearch() {
+/* 搜索功能 + 新建目录按钮 — 直接在HTML底部初始化，DOM已就绪 */
+(function initRulePanel() {
   const panelFooter = document.querySelector('#rulePanel .panel-footer');
-  if (!panelFooter || document.getElementById('ruleSearchInput')) return;
-  const searchBar = document.createElement('div');
-  searchBar.className = 'rule-search';
-  searchBar.innerHTML = '<input type="text" id="ruleSearchInput" placeholder="搜索规则..." oninput="Rules.render()">';
-  panelFooter.parentNode.insertBefore(searchBar, panelFooter);
-}
+  if (!panelFooter) return;
 
-document.addEventListener('DOMContentLoaded', initRuleSearch);
+  if (!document.getElementById('ruleSearchInput')) {
+    const searchBar = document.createElement('div');
+    searchBar.className = 'rule-search';
+    searchBar.innerHTML = '<input type="text" id="ruleSearchInput" placeholder="搜索规则..." oninput="Rules.render()">';
+    panelFooter.parentNode.insertBefore(searchBar, panelFooter);
+  }
 
-function initRuleCreateGroupBtn() {
-  const panelFooter = document.querySelector('#rulePanel .panel-footer');
-  if (!panelFooter || document.getElementById('createGroupBtn')) return;
-  const btn = document.createElement('button');
-  btn.id = 'createGroupBtn';
-  btn.className = 'btn';
-  btn.textContent = '📁 新建目录';
-  btn.onclick = () => Rules.showCreateGroupDialog();
-  panelFooter.appendChild(btn);
-}
-
-document.addEventListener('DOMContentLoaded', initRuleCreateGroupBtn);
+  if (!document.getElementById('createGroupBtn')) {
+    const btn = document.createElement('button');
+    btn.id = 'createGroupBtn';
+    btn.className = 'btn';
+    btn.textContent = '📁 新建目录';
+    btn.onclick = () => Rules.showCreateGroupDialog();
+    panelFooter.appendChild(btn);
+  }
+})();
