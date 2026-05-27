@@ -89,6 +89,46 @@ def create_rule(body: RuleCreate):
     return rule.to_dict()
 
 
+@router.put('/move')
+async def move_rule(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail='请求体不是有效的 JSON')
+    rule_id = int(body.get('rule_id', 0))
+    target_group = str(body.get('target_group', ''))
+    target_order = int(body.get('target_order', 0))
+
+    db = get_db()
+    src = db.execute('SELECT * FROM filter_rules WHERE id = ?', (rule_id,)).fetchone()
+    if not src:
+        raise HTTPException(status_code=404, detail='规则不存在')
+    ts = now_iso()
+
+    tgt = db.execute(
+        'SELECT id, sort_order FROM filter_rules WHERE id != ? AND sort_order = ? LIMIT 1',
+        (rule_id, target_order),
+    ).fetchone()
+
+    if tgt:
+        db.execute(
+            'UPDATE filter_rules SET sort_order=?, group_name=?, updated_at=? WHERE id=?',
+            (tgt['sort_order'], target_group, ts, rule_id),
+        )
+        db.execute(
+            'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
+            (src['sort_order'], ts, tgt['id']),
+        )
+    else:
+        db.execute(
+            'UPDATE filter_rules SET sort_order=?, group_name=?, updated_at=? WHERE id=?',
+            (target_order, target_group, ts, rule_id),
+        )
+
+    db.commit()
+    return {'ok': True}
+
+
 @router.put('/{rule_id}')
 def update_rule(rule_id: int, body: RuleUpdate):
     db = get_db()
@@ -133,46 +173,6 @@ def delete_rule(rule_id: int):
     if not existing:
         raise HTTPException(status_code=404, detail='规则不存在')
     db.execute('DELETE FROM filter_rules WHERE id = ?', (rule_id,))
-    db.commit()
-    return {'ok': True}
-
-
-@router.put('/move')
-async def move_rule(request: Request):
-    try:
-        body = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail='请求体不是有效的 JSON')
-    rule_id = int(body.get('rule_id', 0))
-    target_group = str(body.get('target_group', ''))
-    target_order = int(body.get('target_order', 0))
-
-    db = get_db()
-    src = db.execute('SELECT * FROM filter_rules WHERE id = ?', (rule_id,)).fetchone()
-    if not src:
-        raise HTTPException(status_code=404, detail='规则不存在')
-    ts = now_iso()
-
-    tgt = db.execute(
-        'SELECT id, sort_order FROM filter_rules WHERE id != ? AND sort_order = ? LIMIT 1',
-        (rule_id, target_order),
-    ).fetchone()
-
-    if tgt:
-        db.execute(
-            'UPDATE filter_rules SET sort_order=?, group_name=?, updated_at=? WHERE id=?',
-            (tgt['sort_order'], target_group, ts, rule_id),
-        )
-        db.execute(
-            'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
-            (src['sort_order'], ts, tgt['id']),
-        )
-    else:
-        db.execute(
-            'UPDATE filter_rules SET sort_order=?, group_name=?, updated_at=? WHERE id=?',
-            (target_order, target_group, ts, rule_id),
-        )
-
     db.commit()
     return {'ok': True}
 
