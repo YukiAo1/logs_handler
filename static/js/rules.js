@@ -203,7 +203,9 @@ const Rules = {
 
         if (isGroupHeader) {
           targetGroup = el.closest('.rule-group')?.dataset?.group || '';
-          targetOrder = 0;
+          // 取目标目录中所有规则的最大 sort_order + 1，放在末尾
+          const groupRules = App.state.rules.filter(r => (r.group_name || '') === targetGroup);
+          targetOrder = groupRules.reduce((max, r) => Math.max(max, Number(r.sort_order) || 0), 0) + 1;
         } else if (!isNaN(tgtId)) {
           const tgtRule = App.state.rules.find(r => r.id === tgtId);
           if (!tgtRule) return;

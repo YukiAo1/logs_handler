@@ -55,9 +55,14 @@ def list_rules():
             groups[g] = []
         groups[g].append(rule)
 
+    # 按组内最小 sort_order 排序目录
     result = []
     for g, rules in groups.items():
-        result.append({'group_name': g, 'rules': rules})
+        min_order = min(r.get('sort_order', 0) for r in rules)
+        result.append({'group_name': g, 'rules': rules, '_min_order': min_order})
+    result.sort(key=lambda x: x['_min_order'])
+    for item in result:
+        del item['_min_order']
     return result
 
 
