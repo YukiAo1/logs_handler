@@ -130,14 +130,39 @@ def delete_rule(rule_id: int):
 @router.put('/move')
 def move_rule(body: RuleMove):
     db = get_db()
-    existing = db.execute('SELECT id FROM filter_rules WHERE id = ?', (body.rule_id,)).fetchone()
-    if not existing:
+    src = db.execute('SELECT * FROM filter_rules WHERE id = ?', (body.rule_id,)).fetchone()
+    if not src:
         raise HTTPException(status_code=404, detail='规则不存在')
+    ts = now_iso()
 
-    db.execute(
-        'UPDATE filter_rules SET group_name=?, sort_order=?, updated_at=? WHERE id=?',
-        (body.target_group.strip(), body.target_order, now_iso(), body.rule_id),
-    )
+    # 拖到目录头 → 移入目录，放在最前面
+    if body.target_group is not None and body.target_order == 0:
+        db.execute(
+            'UPDATE filter_rules SET group_name=?, sort_order=0, updated_at=? WHERE id=?',
+            (body.target_group.strip(), ts, body.rule_id),
+        )
+    elif body.target_order >= 0:
+        # 拖到具体规则 → 交换 sort_order
+        tgt = db.execute(
+            'SELECT id, sort_order FROM filter_rules WHERE id != ? AND sort_order = ? LIMIT 1',
+            (body.rule_id, body.target_order),
+        ).fetchone()
+        if tgt:
+            # 交换两个规则的 sort_order
+            db.execute(
+                'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
+                (tgt['sort_order'], ts, body.rule_id),
+            )
+            db.execute(
+                'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
+                (src['sort_order'], ts, tgt['id']),
+            )
+        else:
+            db.execute(
+                'UPDATE filter_rules SET sort_order=?, updated_at=? WHERE id=?',
+                (body.target_order, ts, body.rule_id),
+            )
+
     db.commit()
     return {'ok': True}
 

@@ -406,19 +406,23 @@ const Rules = {
   },
 };
 
-/* 搜索功能 + 新建目录按钮 — 直接在HTML底部初始化，DOM已就绪 */
+/* 搜索功能放在顶部 + 新建目录按钮 */
 (function initRulePanel() {
-  const panelFooter = document.querySelector('#rulePanel .panel-footer');
-  if (!panelFooter) return;
+  const panel = document.getElementById('rulePanel');
+  if (!panel) return;
 
-  if (!document.getElementById('ruleSearchInput')) {
+  const header = panel.querySelector('.panel-header');
+  const body = panel.querySelector('.panel-body');
+
+  if (!document.getElementById('ruleSearchInput') && header && body) {
     const searchBar = document.createElement('div');
     searchBar.className = 'rule-search';
     searchBar.innerHTML = '<input type="text" id="ruleSearchInput" placeholder="搜索规则..." oninput="Rules.render()">';
-    panelFooter.parentNode.insertBefore(searchBar, panelFooter);
+    header.parentNode.insertBefore(searchBar, body);
   }
 
-  if (!document.getElementById('createGroupBtn')) {
+  const panelFooter = panel.querySelector('.panel-footer');
+  if (!document.getElementById('createGroupBtn') && panelFooter) {
     const btn = document.createElement('button');
     btn.id = 'createGroupBtn';
     btn.className = 'btn';
