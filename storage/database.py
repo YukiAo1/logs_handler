@@ -23,6 +23,8 @@ def init_db():
             name        TEXT NOT NULL,
             pattern     TEXT NOT NULL,
             description TEXT DEFAULT '',
+            group_name  TEXT DEFAULT '',
+            sort_order  INTEGER DEFAULT 0,
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         );
@@ -49,4 +51,17 @@ def init_db():
             updated_at  TEXT NOT NULL
         );
     ''')
+    conn.commit()
+    _migrate_v2_to_v3(conn)
+
+
+def _migrate_v2_to_v3(conn):
+    try:
+        conn.execute('ALTER TABLE filter_rules ADD COLUMN group_name TEXT DEFAULT \'\'')
+    except Exception:
+        pass
+    try:
+        conn.execute('ALTER TABLE filter_rules ADD COLUMN sort_order INTEGER DEFAULT 0')
+    except Exception:
+        pass
     conn.commit()

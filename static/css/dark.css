@@ -184,6 +184,15 @@ html, body {
   transition: background 0.15s, border-color 0.15s;
 }
 
+.rule-item.dragging {
+  opacity: 0.4;
+}
+
+.rule-item.drag-over,
+.rule-group-header.drag-over {
+  border-top: 2px solid var(--accent1);
+}
+
 .rule-item:hover {
   background: var(--row-hover);
 }
@@ -224,6 +233,77 @@ html, body {
 .rule-actions .btn-sm {
   font-size: 10px;
   padding: 2px 6px;
+}
+
+/* --- 规则分组 --- */
+
+.rule-group-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent2);
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 52, 96, 0.15);
+  transition: background 0.15s;
+}
+
+.rule-group-header:hover {
+  background: rgba(15, 52, 96, 0.25);
+}
+
+.rule-group-toggle {
+  font-size: 10px;
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.rule-group-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rule-group-count {
+  font-size: 10px;
+  color: var(--text2);
+  background: var(--panel);
+  padding: 0 5px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.rule-group-body {
+  border-bottom: 1px solid rgba(15, 52, 96, 0.2);
+}
+
+/* --- 规则搜索 --- */
+
+.rule-search {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rule-search input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--input-border);
+  border-radius: 3px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 11px;
+  font-family: Consolas, monospace;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.rule-search input:focus {
+  border-color: var(--accent1);
 }
 
 #content {

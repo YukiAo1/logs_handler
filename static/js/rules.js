@@ -1,8 +1,22 @@
 const Rules = {
+  _groups: [],
+
+  _flatten(groups) {
+    this._groups = groups;
+    const flat = [];
+    for (const g of groups) {
+      for (const r of g.rules) {
+        r.group_name = g.group_name;
+        flat.push(r);
+      }
+    }
+    return flat;
+  },
+
   async loadRules() {
     try {
       const data = await API.get('/api/rules');
-      App.state.rules = data;
+      App.state.rules = this._flatten(data);
       this.render();
     } catch (e) {
       showToast('加载规则失败: ' + e.message, 'error');
@@ -11,31 +25,80 @@ const Rules = {
 
   render() {
     const list = document.getElementById('ruleList');
-    const rules = App.state.rules;
+    const searchVal = (document.getElementById('ruleSearchInput') || {}).value || '';
+    const kw = searchVal.trim().toLowerCase();
 
-    if (rules.length === 0) {
+    if (this._groups.length === 0) {
       list.innerHTML = '<p class="placeholder">暂无规则，点击下方按钮新建</p>';
       return;
     }
 
-    list.innerHTML = rules.map(r => `
-      <div class="rule-item${App.state.activeRuleId === r.id ? ' active' : ''}"
-           data-id="${r.id}">
+    let html = '';
+    for (const group of this._groups) {
+      const rules = group.group_name
+        ? group.rules
+        : group.rules;
+      let filtered = rules;
+      if (kw) {
+        filtered = rules.filter(r => r.name.toLowerCase().includes(kw));
+      }
+      if (filtered.length === 0 && !(kw && group.group_name)) continue;
+
+      if (group.group_name) {
+        const expanded = this._isGroupExpanded(group.group_name);
+        html += `<div class="rule-group" data-group="${escapeHtml(group.group_name)}">
+          <div class="rule-group-header" draggable="true">
+            <span class="rule-group-toggle">${expanded ? '▼' : '▶'}</span>
+            <span class="rule-group-name">${escapeHtml(group.group_name)}</span>
+            <span class="rule-group-count">${filtered.length}</span>
+          </div>
+          <div class="rule-group-body" style="display:${expanded ? '' : 'none'}">
+            ${filtered.map(r => this._renderRuleItem(r)).join('')}
+          </div>
+        </div>`;
+      } else {
+        for (const r of filtered) {
+          html += this._renderRuleItem(r);
+        }
+      }
+    }
+
+    list.innerHTML = html;
+
+    this._bindEvents(list);
+    this._initDragDrop(list);
+  },
+
+  _renderRuleItem(r) {
+    return `<div class="rule-item${App.state.activeRuleId === r.id ? ' active' : ''}"
+           draggable="true" data-id="${r.id}" data-group="${escapeHtml(r.group_name || '')}">
         <div class="rule-name">${escapeHtml(r.name || '')}</div>
         <div class="rule-pattern">${escapeHtml(r.pattern || '')}</div>
         <div class="rule-actions">
           <button class="btn btn-sm" data-action="edit" data-id="${r.id}">编辑</button>
           <button class="btn btn-sm btn-danger" data-action="delete" data-id="${r.id}">删除</button>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+  },
+
+  _isGroupExpanded(name) {
+    const stored = localStorage.getItem('rule_group_expanded_' + name);
+    return stored !== '0';
+  },
+
+  _toggleGroup(name, expand) {
+    localStorage.setItem('rule_group_expanded_' + name, expand ? '1' : '0');
+  },
+
+  _bindEvents(list) {
+    const activeId = () => App.state.activeRuleId;
 
     list.querySelectorAll('.rule-item').forEach(el => {
       el.addEventListener('click', (e) => {
         if (e.target.closest('[data-action]')) return;
         const id = parseInt(el.dataset.id);
-        App.state.activeRuleId = (App.state.activeRuleId === id) ? null : id;
-        this.render();
+        App.state.activeRuleId = (activeId() === id) ? null : id;
+        this.loadRules();
         if (App.state.activeRuleId) {
           Search.onFilterChange();
         }
@@ -46,7 +109,7 @@ const Rules = {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const id = parseInt(btn.dataset.id);
-        const rule = rules.find(r => r.id === id);
+        const rule = App.state.rules.find(r => r.id === id);
         if (rule) this.showEditDialog(rule);
       });
     });
@@ -58,9 +121,80 @@ const Rules = {
         await this.deleteRule(id);
       });
     });
+
+    list.querySelectorAll('.rule-group-header').forEach(hdr => {
+      hdr.addEventListener('click', (e) => {
+        if (e.target.closest('.rule-group-toggle') === null && e.target.closest('.rule-group-name') === null) return;
+        const group = hdr.closest('.rule-group');
+        const body = group.querySelector('.rule-group-body');
+        const toggle = hdr.querySelector('.rule-group-toggle');
+        const expanded = body.style.display !== 'none';
+        body.style.display = expanded ? 'none' : '';
+        toggle.textContent = expanded ? '▶' : '▼';
+        this._toggleGroup(group.dataset.group, !expanded);
+      });
+    });
+  },
+
+  _dragSrc: null,
+
+  _initDragDrop(list) {
+    list.querySelectorAll('[draggable="true"]').forEach(el => {
+      el.addEventListener('dragstart', (e) => {
+        this._dragSrc = el;
+        e.dataTransfer.effectAllowed = 'move';
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', () => {
+        el.classList.remove('dragging');
+        list.querySelectorAll('.drag-over').forEach(d => d.classList.remove('drag-over'));
+      });
+      el.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        el.classList.add('drag-over');
+      });
+      el.addEventListener('dragleave', () => {
+        el.classList.remove('drag-over');
+      });
+      el.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        el.classList.remove('drag-over');
+        const src = this._dragSrc;
+        if (!src || src === el) return;
+
+        const srcId = parseInt(src.dataset.id);
+        const tgtId = parseInt(el.dataset.id);
+        if (isNaN(srcId) || isNaN(tgtId)) return;
+
+        const srcRule = App.state.rules.find(r => r.id === srcId);
+        const tgtRule = App.state.rules.find(r => r.id === tgtId);
+        if (!srcRule || !tgtRule) return;
+
+        const srcGroup = src.dataset.group || '';
+        const tgtGroup = el.matches('.rule-group-header')
+          ? (el.closest('.rule-group')?.dataset?.group || '')
+          : (el.dataset.group || '');
+
+        try {
+          await API.put('/api/rules/move', {
+            rule_id: srcId,
+            target_group: tgtGroup,
+            target_order: tgtRule.sort_order,
+          });
+          showToast('规则已移动', 'success');
+          await this.loadRules();
+        } catch (err) {
+          showToast('移动失败: ' + err.message, 'error');
+        }
+      });
+    });
   },
 
   showCreateDialog() {
+    const groups = [...new Set(this._groups.map(g => g.group_name).filter(Boolean))];
+    const groupOpts = groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+
     const bodyHtml = `
       <div class="form-group">
         <label>规则名称</label>
@@ -71,18 +205,33 @@ const Rules = {
         <textarea id="rulePattern" placeholder="例如: abc|def|aaaabcs"></textarea>
       </div>
       <div class="form-group">
+        <label>所属目录</label>
+        <select id="ruleGroup">
+          <option value="">（不分组，平铺显示）</option>
+          ${groupOpts}
+          <option value="__new__">新建目录...</option>
+        </select>
+      </div>
+      <div id="ruleNewGroupWrap" class="form-group" style="display:none">
+        <label>新目录名称</label>
+        <input id="ruleNewGroup" placeholder="输入目录名称" maxlength="30">
+      </div>
+      <div class="form-group">
         <label>备注（可选）</label>
-        <input id="ruleDesc" placeholder="简要描述这条规则的用途" maxlength="200">
+        <input id="ruleDesc" placeholder="简要描述" maxlength="200">
       </div>`;
 
     showModal('新建规则', bodyHtml, async (box) => {
       const name = box.querySelector('#ruleName').value.trim();
       const pattern = box.querySelector('#rulePattern').value.trim();
       const description = box.querySelector('#ruleDesc').value.trim();
+      let group_name = box.querySelector('#ruleGroup').value;
+      if (group_name === '__new__') {
+        group_name = box.querySelector('#ruleNewGroup').value.trim();
+      }
       if (!name) throw new Error('请输入规则名称');
-
       try {
-        await API.post('/api/rules', { name, pattern, description });
+        await API.post('/api/rules', { name, pattern, description, group_name });
         showToast('规则创建成功', 'success');
         await this.loadRules();
       } catch (e) {
@@ -90,9 +239,25 @@ const Rules = {
         throw e;
       }
     });
+
+    // 监听目录下拉切换
+    setTimeout(() => {
+      const sel = document.getElementById('ruleGroup');
+      const wrap = document.getElementById('ruleNewGroupWrap');
+      if (sel && wrap) {
+        sel.addEventListener('change', () => {
+          wrap.style.display = sel.value === '__new__' ? '' : 'none';
+        });
+      }
+    }, 50);
   },
 
   showEditDialog(rule) {
+    const groups = [...new Set(this._groups.map(g => g.group_name).filter(Boolean))];
+    const groupOpts = groups.map(g =>
+      `<option value="${escapeHtml(g)}"${g === rule.group_name ? ' selected' : ''}>${escapeHtml(g)}</option>`
+    ).join('');
+
     const bodyHtml = `
       <div class="form-group">
         <label>规则名称</label>
@@ -103,6 +268,18 @@ const Rules = {
         <textarea id="rulePattern">${escapeHtml(rule.pattern)}</textarea>
       </div>
       <div class="form-group">
+        <label>所属目录</label>
+        <select id="ruleGroup">
+          <option value="">（不分组，平铺显示）</option>
+          ${groupOpts}
+          <option value="__new__">新建目录...</option>
+        </select>
+      </div>
+      <div id="ruleNewGroupWrap" class="form-group" style="display:none">
+        <label>新目录名称</label>
+        <input id="ruleNewGroup" placeholder="输入目录名称" maxlength="30">
+      </div>
+      <div class="form-group">
         <label>备注（可选）</label>
         <input id="ruleDesc" value="${escapeHtml(rule.description || '')}" maxlength="200">
       </div>`;
@@ -111,10 +288,13 @@ const Rules = {
       const name = box.querySelector('#ruleName').value.trim();
       const pattern = box.querySelector('#rulePattern').value.trim();
       const description = box.querySelector('#ruleDesc').value.trim();
+      let group_name = box.querySelector('#ruleGroup').value;
+      if (group_name === '__new__') {
+        group_name = box.querySelector('#ruleNewGroup').value.trim();
+      }
       if (!name) throw new Error('请输入规则名称');
-
       try {
-        await API.put(`/api/rules/${rule.id}`, { name, pattern, description });
+        await API.put(`/api/rules/${rule.id}`, { name, pattern, description, group_name });
         showToast('规则更新成功', 'success');
         await this.loadRules();
       } catch (e) {
@@ -122,6 +302,16 @@ const Rules = {
         throw e;
       }
     });
+
+    setTimeout(() => {
+      const sel = document.getElementById('ruleGroup');
+      const wrap = document.getElementById('ruleNewGroupWrap');
+      if (sel && wrap) {
+        sel.addEventListener('change', () => {
+          wrap.style.display = sel.value === '__new__' ? '' : 'none';
+        });
+      }
+    }, 50);
   },
 
   async deleteRule(id) {
@@ -171,7 +361,6 @@ const Rules = {
       if (!fileInput.files || fileInput.files.length === 0) {
         throw new Error('请选择文件');
       }
-
       try {
         const result = await API.upload(
           '/api/rules/import/upload',
@@ -187,3 +376,15 @@ const Rules = {
     });
   },
 };
+
+/* 搜索功能 — 工具栏搜索按钮触发 */
+function initRuleSearch() {
+  const panelFooter = document.querySelector('#rulePanel .panel-footer');
+  if (!panelFooter || document.getElementById('ruleSearchInput')) return;
+  const searchBar = document.createElement('div');
+  searchBar.className = 'rule-search';
+  searchBar.innerHTML = '<input type="text" id="ruleSearchInput" placeholder="搜索规则..." oninput="Rules.render()">';
+  panelFooter.parentNode.insertBefore(searchBar, panelFooter);
+}
+
+document.addEventListener('DOMContentLoaded', initRuleSearch);

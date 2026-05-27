@@ -2,7 +2,7 @@ import json
 import re
 
 from fastapi import APIRouter, HTTPException, UploadFile, Query
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from storage.database import get_db
@@ -15,16 +15,20 @@ class RuleCreate(BaseModel):
     name: str
     pattern: str
     description: str = ''
+    group_name: str = ''
 
 
 class RuleUpdate(BaseModel):
     name: str | None = None
     pattern: str | None = None
     description: str | None = None
+    group_name: str | None = None
 
 
-class ImportMode(BaseModel):
-    mode: str = 'merge'
+class RuleMove(BaseModel):
+    rule_id: int
+    target_group: str = ''
+    target_order: int = 0
 
 
 def _validate_pattern(pattern: str):
@@ -39,8 +43,22 @@ def _validate_pattern(pattern: str):
 @router.get('')
 def list_rules():
     db = get_db()
-    rows = db.execute('SELECT * FROM filter_rules ORDER BY updated_at DESC').fetchall()
-    return [FilterRule.from_row(r).to_dict() for r in rows]
+    rows = db.execute(
+        'SELECT * FROM filter_rules ORDER BY sort_order ASC, id ASC'
+    ).fetchall()
+
+    groups = {}
+    for r in rows:
+        rule = FilterRule.from_row(r).to_dict()
+        g = rule.pop('group_name') or ''
+        if g not in groups:
+            groups[g] = []
+        groups[g].append(rule)
+
+    result = []
+    for g, rules in groups.items():
+        result.append({'group_name': g, 'rules': rules})
+    return result
 
 
 @router.post('')
@@ -48,9 +66,14 @@ def create_rule(body: RuleCreate):
     _validate_pattern(body.pattern)
     db = get_db()
     ts = now_iso()
+
+    max_order = db.execute(
+        'SELECT COALESCE(MAX(sort_order), -1) + 1 FROM filter_rules'
+    ).fetchone()[0]
+
     cursor = db.execute(
-        'INSERT INTO filter_rules (name, pattern, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-        (body.name.strip(), body.pattern.strip(), body.description, ts, ts),
+        'INSERT INTO filter_rules (name, pattern, description, group_name, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        (body.name.strip(), body.pattern.strip(), body.description, body.group_name.strip(), max_order, ts, ts),
     )
     db.commit()
     rule = FilterRule(
@@ -58,6 +81,8 @@ def create_rule(body: RuleCreate):
         name=body.name.strip(),
         pattern=body.pattern.strip(),
         description=body.description,
+        group_name=body.group_name.strip(),
+        sort_order=max_order,
         created_at=ts,
         updated_at=ts,
     )
@@ -79,11 +104,13 @@ def update_rule(rule_id: int, body: RuleUpdate):
         rule.pattern = body.pattern.strip()
     if body.description is not None:
         rule.description = body.description
+    if body.group_name is not None:
+        rule.group_name = body.group_name.strip()
 
     rule.updated_at = now_iso()
     db.execute(
-        'UPDATE filter_rules SET name=?, pattern=?, description=?, updated_at=? WHERE id=?',
-        (rule.name, rule.pattern, rule.description, rule.updated_at, rule_id),
+        'UPDATE filter_rules SET name=?, pattern=?, description=?, group_name=?, updated_at=? WHERE id=?',
+        (rule.name, rule.pattern, rule.description, rule.group_name, rule.updated_at, rule_id),
     )
     db.commit()
     return rule.to_dict()
@@ -100,10 +127,25 @@ def delete_rule(rule_id: int):
     return {'ok': True}
 
 
+@router.put('/move')
+def move_rule(body: RuleMove):
+    db = get_db()
+    existing = db.execute('SELECT id FROM filter_rules WHERE id = ?', (body.rule_id,)).fetchone()
+    if not existing:
+        raise HTTPException(status_code=404, detail='规则不存在')
+
+    db.execute(
+        'UPDATE filter_rules SET group_name=?, sort_order=?, updated_at=? WHERE id=?',
+        (body.target_group.strip(), body.target_order, now_iso(), body.rule_id),
+    )
+    db.commit()
+    return {'ok': True}
+
+
 @router.get('/export')
 def export_rules():
     db = get_db()
-    rows = db.execute('SELECT * FROM filter_rules ORDER BY id').fetchall()
+    rows = db.execute('SELECT * FROM filter_rules ORDER BY sort_order ASC, id ASC').fetchall()
     rules = []
     for r in rows:
         rule = FilterRule.from_row(r)
@@ -111,13 +153,13 @@ def export_rules():
             'name': rule.name,
             'pattern': rule.pattern,
             'description': rule.description,
+            'group_name': rule.group_name,
         })
-    payload = {
-        'version': '1.0',
+    return JSONResponse(content={
+        'version': '2.0',
         'exported_at': now_iso(),
         'rules': rules,
-    }
-    return JSONResponse(content=payload)
+    })
 
 
 @router.post('/import')
@@ -126,6 +168,10 @@ def import_rules(mode: ImportMode = ImportMode(mode='merge')):
         status_code=400,
         content={'detail': '请通过 multipart/form-data 上传 JSON 文件，字段名: file'},
     )
+
+
+class ImportMode(BaseModel):
+    mode: str = 'merge'
 
 
 @router.post('/import/upload')
@@ -150,10 +196,13 @@ async def import_rules_upload(file: UploadFile, mode: str = Query('merge')):
 
     imported = 0
     skipped = 0
+    max_order = db.execute('SELECT COALESCE(MAX(sort_order), -1) FROM filter_rules').fetchone()[0]
+
     for item in rules_list:
         name = item.get('name', '').strip()
         pattern = item.get('pattern', '').strip()
         description = item.get('description', '')
+        group_name = item.get('group_name', '').strip()
         if not name or not pattern:
             skipped += 1
             continue
@@ -171,9 +220,10 @@ async def import_rules_upload(file: UploadFile, mode: str = Query('merge')):
                 skipped += 1
                 continue
 
+        max_order += 1
         db.execute(
-            'INSERT INTO filter_rules (name, pattern, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-            (name, pattern, description, ts, ts),
+            'INSERT INTO filter_rules (name, pattern, description, group_name, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (name, pattern, description, group_name, max_order, ts, ts),
         )
         imported += 1
 
