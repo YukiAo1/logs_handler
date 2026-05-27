@@ -59,6 +59,7 @@ const Rules = {
             <span class="rule-group-toggle">${expanded ? '▼' : '▶'}</span>
             <span class="rule-group-name">${escapeHtml(group.group_name)}</span>
             <span class="rule-group-count">${filtered.length}</span>
+            <button class="btn btn-sm btn-danger rule-group-del" title="删除此目录及其所有规则">✕</button>
           </div>
           <div class="rule-group-body" style="display:${expanded ? '' : 'none'}">
             ${filtered.length ? filtered.map(r => this._renderRuleItem(r)).join('') : ''}
@@ -132,6 +133,7 @@ const Rules = {
 
     list.querySelectorAll('.rule-group-header').forEach(hdr => {
       hdr.addEventListener('click', (e) => {
+        if (e.target.closest('.rule-group-del')) return;
         const group = hdr.closest('.rule-group');
         const body = group.querySelector('.rule-group-body');
         const toggle = hdr.querySelector('.rule-group-toggle');
@@ -139,6 +141,23 @@ const Rules = {
         body.style.display = expanded ? 'none' : '';
         toggle.textContent = expanded ? '▶' : '▼';
         Rules._toggleGroup(group.dataset.group, !expanded);
+      });
+    });
+
+    list.querySelectorAll('.rule-group-del').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const group = btn.closest('.rule-group');
+        const name = group?.dataset?.group || '';
+        if (!name) return;
+        if (!confirm(`确定删除目录「${name}」及其所有规则吗？`)) return;
+        try {
+          await API.del('/api/rules/group?group_name=' + encodeURIComponent(name));
+          showToast(`目录「${name}」已删除`, 'success');
+          await this.loadRules();
+        } catch (err) {
+          showToast('删除目录失败: ' + (err.message || JSON.stringify(err)), 'error');
+        }
       });
     });
   },

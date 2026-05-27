@@ -1,7 +1,7 @@
 import json
 import re
 
-from fastapi import APIRouter, HTTPException, UploadFile, Query
+from fastapi import APIRouter, HTTPException, UploadFile, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -128,7 +128,11 @@ def delete_rule(rule_id: int):
 
 
 @router.put('/move')
-def move_rule(body: dict):
+async def move_rule(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail='请求体不是有效的 JSON')
     rule_id = int(body.get('rule_id', 0))
     target_group = str(body.get('target_group', ''))
     target_order = int(body.get('target_order', 0))
@@ -159,6 +163,16 @@ def move_rule(body: dict):
             (target_order, target_group, ts, rule_id),
         )
 
+    db.commit()
+    return {'ok': True}
+
+
+@router.delete('/group')
+def delete_group(group_name: str = Query('')):
+    if not group_name.strip():
+        raise HTTPException(status_code=400, detail='目录名称不能为空')
+    db = get_db()
+    db.execute('DELETE FROM filter_rules WHERE group_name = ?', (group_name.strip(),))
     db.commit()
     return {'ok': True}
 
