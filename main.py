@@ -101,7 +101,10 @@ def check_and_free_port(host, port):
 def main():
     ensure_export_dir()
 
-    check_and_free_port(HOST, PORT)
+    if not check_and_free_port(HOST, PORT):
+        print('端口无法释放，程序退出')
+        input('\n按 Enter 键退出...')
+        return
 
     app = create_app()
 
