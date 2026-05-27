@@ -162,16 +162,16 @@ def export_rules():
     })
 
 
+class ImportMode(BaseModel):
+    mode: str = 'merge'
+
+
 @router.post('/import')
 def import_rules(mode: ImportMode = ImportMode(mode='merge')):
     return JSONResponse(
         status_code=400,
         content={'detail': '请通过 multipart/form-data 上传 JSON 文件，字段名: file'},
     )
-
-
-class ImportMode(BaseModel):
-    mode: str = 'merge'
 
 
 @router.post('/import/upload')
