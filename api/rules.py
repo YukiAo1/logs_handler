@@ -3,7 +3,7 @@ import re
 
 from fastapi import APIRouter, HTTPException, UploadFile, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from storage.database import get_db
 from storage.models import FilterRule, now_iso
@@ -29,6 +29,16 @@ class RuleMove(BaseModel):
     rule_id: int
     target_group: str = ''
     target_order: int = 0
+
+    @field_validator('target_order', mode='before')
+    @classmethod
+    def coerce_target_order(cls, v):
+        if isinstance(v, str):
+            try:
+                return int(v)
+            except ValueError:
+                raise ValueError('target_order must be a valid integer')
+        return v
 
 
 def _validate_pattern(pattern: str):

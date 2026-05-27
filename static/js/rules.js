@@ -170,11 +170,11 @@ const Rules = {
         const src = this._dragSrc;
         if (!src || src === el) return;
 
-        const srcId = parseInt(src.dataset.id);
+        const srcId = parseInt(src.dataset.id, 10);
         if (isNaN(srcId)) return;
 
         const isGroupHeader = el.matches('.rule-group-header');
-        const tgtId = isGroupHeader ? null : parseInt(el.dataset.id);
+        const tgtId = isGroupHeader ? null : parseInt(el.dataset.id, 10);
 
         const srcRule = App.state.rules.find(r => r.id === srcId);
         if (!srcRule) return;
@@ -183,21 +183,19 @@ const Rules = {
         let targetOrder;
 
         if (isGroupHeader) {
-          // 拖到目录头 → 进入该目录
           targetGroup = el.closest('.rule-group')?.dataset?.group || '';
           targetOrder = 0;
         } else if (!isNaN(tgtId)) {
-          // 拖到另一个规则 → 交换位置
           const tgtRule = App.state.rules.find(r => r.id === tgtId);
           if (!tgtRule) return;
           targetGroup = el.dataset.group || '';
-          targetOrder = tgtRule.sort_order;
+          targetOrder = Number(tgtRule.sort_order) || 0;
         } else {
           return;
         }
 
         try {
-          const result = await API.put('/api/rules/move', {
+          await API.put('/api/rules/move', {
             rule_id: srcId,
             target_group: targetGroup,
             target_order: targetOrder,
