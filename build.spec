@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 
 base_dir = SPECPATH
 
@@ -26,10 +27,13 @@ hiddenimports = [
     'pydantic',
 ]
 
+rg_path = shutil.which('rg') or shutil.which('rg.exe')
+binaries = [(rg_path, '.')] if rg_path else []
+
 a = Analysis(
     ['main.py'],
     pathex=[APP_DIR],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
@@ -57,7 +61,7 @@ exe = EXE(
     runtime_tmpdir=None,
     console=True,
     disable_windowed_traceback=False,
-    argv_emulation=False,
+    argv_emplacement=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,

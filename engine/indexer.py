@@ -93,6 +93,30 @@ def read_raw_line(index: FileIndex, line_no: int) -> str:
     return data.decode('utf-8', errors='replace').rstrip('\n\r')
 
 
+def read_raw_lines_batch(index: FileIndex, start_line: int, end_line: int) -> list[str]:
+    if start_line < 0 or start_line >= len(index.offsets):
+        return []
+    if end_line > len(index.offsets):
+        end_line = len(index.offsets)
+    if start_line >= end_line:
+        return []
+    start_offset = index.offsets[start_line]
+    end_offset = index.offsets[end_line - 1]
+    next_offset = (
+        index.offsets[end_line] if end_line < len(index.offsets)
+        else index.file_size
+    )
+    data = index._mmap[start_offset:next_offset]
+    text = data.decode('utf-8', errors='replace')
+    lines = text.splitlines(keepends=True)
+    result = []
+    for l in lines:
+        l = l.rstrip('\n\r')
+        if l:
+            result.append(l)
+    return result
+
+
 def read_lines(index: FileIndex, line_nos: list[int]) -> list[str]:
     return [read_raw_line(index, n) for n in line_nos]
 
