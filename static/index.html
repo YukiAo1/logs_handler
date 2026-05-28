@@ -26,16 +26,16 @@
   <div id="filterBar" style="display:none">
     <div class="filter-group">
       <span class="filter-label">级别:</span>
-      <label class="level-check"><input type="checkbox" value="D" onchange="Search.onFilterChange()">D</label>
+      <label class="level-check"><input type="checkbox" value="D" onchange="Search.onFilterChange()" checked>D</label>
       <label class="level-check"><input type="checkbox" value="I" onchange="Search.onFilterChange()" checked>I</label>
       <label class="level-check"><input type="checkbox" value="W" onchange="Search.onFilterChange()" checked>W</label>
       <label class="level-check"><input type="checkbox" value="E" onchange="Search.onFilterChange()" checked>E</label>
     </div>
     <div class="filter-group">
       <span class="filter-label">时间:</span>
-      <input type="text" id="filterTimeStart" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" onchange="Search.onFilterChange()">
+      <input type="datetime-local" id="filterTimeStart" class="filter-input filter-time" onchange="Search.onFilterChange()">
       <span class="filter-sep">~</span>
-      <input type="text" id="filterTimeEnd" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" onchange="Search.onFilterChange()">
+      <input type="datetime-local" id="filterTimeEnd" class="filter-input filter-time" onchange="Search.onFilterChange()">
     </div>
     <div class="filter-group">
       <span class="filter-label">PID:</span>

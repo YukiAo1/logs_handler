@@ -7,6 +7,18 @@ const Search = {
     searching: false,
   },
 
+  _toBackendTime(dtValue) {
+    if (!dtValue) return '';
+    // dtValue format: YYYY-MM-DDTHH:MM
+    const parts = dtValue.split('T');
+    if (parts.length !== 2) return '';
+    const datePart = parts[0]; // YYYY-MM-DD
+    const timePart = parts[1]; // HH:MM
+    // Convert to MM-DD HH:MM:SS.000
+    const monthDay = datePart.slice(5); // MM-DD
+    return monthDay + ' ' + timePart + ':00.000';
+  },
+
   getFilters() {
     const levels = [];
     document.querySelectorAll('#filterBar .level-check input:checked').forEach(cb => {
@@ -16,8 +28,8 @@ const Search = {
     const pidVal = document.getElementById('filterPid').value.trim();
     const tidVal = document.getElementById('filterTid').value.trim();
     const tagVal = document.getElementById('filterTag').value.trim();
-    const timeStart = document.getElementById('filterTimeStart').value.trim();
-    const timeEnd = document.getElementById('filterTimeEnd').value.trim();
+    const timeStart = this._toBackendTime(document.getElementById('filterTimeStart').value);
+    const timeEnd = this._toBackendTime(document.getElementById('filterTimeEnd').value);
     const keyword = document.getElementById('filterKeyword').value.trim();
 
     return {
@@ -49,7 +61,7 @@ const Search = {
 
   clearFilters() {
     document.querySelectorAll('#filterBar .level-check input').forEach(cb => {
-      cb.checked = ['I', 'W', 'E'].includes(cb.value);
+      cb.checked = ['D', 'I', 'W', 'E'].includes(cb.value);
     });
     document.getElementById('filterTimeStart').value = '';
     document.getElementById('filterTimeEnd').value = '';
@@ -61,8 +73,6 @@ const Search = {
     this.state.currentPattern = '';
     if (App.state.activeRuleIds.length > 0) {
       Search.onFilterChange();
-    } else {
-      App.showWelcome();
     }
   },
 
@@ -77,7 +87,6 @@ const Search = {
 
     if (!hasFilters) {
       this.state.searching = false;
-      App.showWelcome();
       return;
     }
 
