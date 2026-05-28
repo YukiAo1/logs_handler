@@ -16,7 +16,7 @@ const Table = {
     this._items = items;
 
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text2)">无匹配结果</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2)">无匹配结果</td></tr>';
       return;
     }
 
@@ -27,8 +27,7 @@ const Table = {
       const timeStr = `${escapeHtml(item.date)} ${escapeHtml(item.time)}`;
       tr.innerHTML = [
         `<td>${item.line_no}</td>`,
-        `<td class="col-time-cell">${timeStr}</td>`,
-        `<td class="col-se-cell"><span class="se-btn se-start" title="以此时间作为开始">S</span><span class="se-btn se-end" title="以此时间作为结束">E</span></td>`,
+        `<td class="col-time-cell">${timeStr}<span class="se-btn se-start" title="填入开始时间">S</span><span class="se-btn se-end" title="填入结束时间">E</span></td>`,
         `<td><span class="level-badge level-${item.level}">${item.level}</span></td>`,
         `<td>${item.pid}</td>`,
         `<td>${item.tid}</td>`,
@@ -76,7 +75,6 @@ const Table = {
           } else {
             document.getElementById('filterTimeEnd').value = timeVal;
           }
-          Search.onFilterChange();
           return;
         }
 
