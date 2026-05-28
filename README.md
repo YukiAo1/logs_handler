@@ -52,6 +52,10 @@ python -m PyInstaller build.spec --clean --noconfirm
 
 `dist/` 目录下还附带 `clear.bat`，可手动清理端口 20306 的占用进程。
 
+### 安装 ripgrep（可选，大幅提升搜索性能）
+
+从 [GitHub Releases](https://github.com/BurntSushi/ripgrep/releases) 下载 `rg.exe`，放入项目 `bin/` 目录即可自动启用。正则匹配性能提升 10-100 倍。
+
 ## 使用指南
 
 ### 1. 加载日志文件
@@ -353,9 +357,9 @@ MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
 ```
 logs_handler/
 ├── main.py              # 入口：启动服务 + 自动打开浏览器 + 端口自清理
-├── config.py            # 全局配置（路径/端口20306/限制）
+├── config.py            # 全局配置（路径/端口20306/限制/工具目录）
 ├── app.py               # FastAPI 应用工厂 + 路由注册
-├── build.spec           # PyInstaller 打包配置
+├── build.spec           # PyInstaller 打包配置（自动检测 bin/rg.exe）
 ├── requirements.txt     # 依赖清单
 ├── engine/
 │   ├── parser.py        # 正则解析单行日志
@@ -389,6 +393,8 @@ logs_handler/
 └── dist/
     ├── logs_handler.exe # PyInstaller 打包产物
     └── clear.bat        # 端口清理脚本
+bin/
+    └── rg.exe           # [可选] ripgrep 搜索引擎，放入后自动启用
 ```
 
 ## v5.0 更新日志

@@ -6,7 +6,7 @@ base_dir = SPECPATH
 
 sys.path.insert(0, base_dir)
 
-from config import STATIC_DIR, APP_DIR
+from config import STATIC_DIR, APP_DIR, TOOLS_DIR
 
 datas = []
 if os.path.isdir(STATIC_DIR):
@@ -27,7 +27,9 @@ hiddenimports = [
     'pydantic',
 ]
 
-rg_path = shutil.which('rg') or shutil.which('rg.exe')
+rg_tools = os.path.join(TOOLS_DIR, 'rg.exe')
+rg_system = shutil.which('rg') or shutil.which('rg.exe')
+rg_path = rg_tools if os.path.isfile(rg_tools) else (rg_system if rg_system else None)
 binaries = [(rg_path, '.')] if rg_path else []
 
 a = Analysis(

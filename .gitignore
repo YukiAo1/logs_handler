@@ -1,5 +1,9 @@
 # Python
+dist/*.exe
+*.db
 __pycache__/
+exports/
+bin/*.exe
 *.py[cod]
 *.egg-info/
 build/

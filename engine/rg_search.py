@@ -4,6 +4,8 @@ import re
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 
+from config import TOOLS_DIR
+
 _RG_AVAILABLE = None
 _RG_PATH = None
 
@@ -13,8 +15,9 @@ def _find_rg():
     if _RG_AVAILABLE is not None:
         return _RG_AVAILABLE
     candidates = ['rg', 'rg.exe']
-    app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    candidates.insert(0, os.path.join(app_dir, 'rg.exe'))
+    rg_in_tools = os.path.join(TOOLS_DIR, 'rg.exe')
+    if rg_in_tools not in candidates:
+        candidates.insert(0, rg_in_tools)
     for exe in candidates:
         try:
             r = subprocess.run([exe, '--version'], capture_output=True, timeout=3)

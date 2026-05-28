@@ -16,6 +16,8 @@ def _static_dir():
 
 APP_DIR = _app_dir()
 STATIC_DIR = _static_dir()
+TOOLS_DIR = os.path.join(APP_DIR, 'bin')
+os.makedirs(TOOLS_DIR, exist_ok=True)
 DB_PATH = os.path.join(APP_DIR, 'logs_handler.db')
 HOST = '127.0.0.1'
 PORT = 20306
