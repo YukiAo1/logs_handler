@@ -10,7 +10,6 @@ const App = {
     Rules.loadRules();
     this.setupDropZone();
     Table.initColumnResize();
-    Search._initTimePickers();
   },
 
   setupDropZone() {

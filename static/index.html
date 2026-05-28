@@ -33,9 +33,9 @@
     </div>
     <div class="filter-group">
       <span class="filter-label">时间:</span>
-      <input type="text" id="filterTimeStart" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" autocomplete="off">
+      <input type="text" id="filterTimeStart" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" onchange="Search.onFilterChange()">
       <span class="filter-sep">~</span>
-      <input type="text" id="filterTimeEnd" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" autocomplete="off">
+      <input type="text" id="filterTimeEnd" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" onchange="Search.onFilterChange()">
     </div>
     <div class="filter-group">
       <span class="filter-label">PID:</span>

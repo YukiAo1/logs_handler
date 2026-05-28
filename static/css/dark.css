@@ -120,7 +120,7 @@ html, body {
   border-color: var(--accent);
 }
 
-.filter-time { width: 160px; }
+.filter-time { width: 140px; }
 .filter-short { width: 60px; }
 .filter-tag { width: 120px; }
 .filter-keyword { width: 360px; }
