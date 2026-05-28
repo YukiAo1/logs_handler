@@ -57,11 +57,13 @@ const Search = {
     document.getElementById('filterTid').value = '';
     document.getElementById('filterTag').value = '';
     document.getElementById('filterKeyword').value = '';
-    App.state.activeRuleIds = [];
-    Rules.render();
     this.state.offset = 0;
     this.state.currentPattern = '';
-    App.showWelcome();
+    if (App.state.activeRuleIds.length > 0) {
+      Search.onFilterChange();
+    } else {
+      App.showWelcome();
+    }
   },
 
   async doSearch() {
