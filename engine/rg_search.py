@@ -18,6 +18,9 @@ def _find_rg():
     rg_in_tools = os.path.join(TOOLS_DIR, 'rg.exe')
     if rg_in_tools not in candidates:
         candidates.insert(0, rg_in_tools)
+    cwd_rg = os.path.normpath(os.path.join(os.getcwd(), 'bin', 'rg.exe'))
+    if cwd_rg not in candidates:
+        candidates.append(cwd_rg)
     for exe in candidates:
         try:
             r = subprocess.run([exe, '--version'], capture_output=True, timeout=3)
