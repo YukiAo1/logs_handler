@@ -75,6 +75,7 @@ const Search = {
 
     if (!hasFilters) {
       this.state.searching = false;
+      App.showWelcome();
       return;
     }
 
@@ -119,8 +120,13 @@ const Search = {
       stats.textContent = `匹配: ${result.total_matches.toLocaleString()} 条`;
       App.setStatus(`匹配 ${result.total_matches.toLocaleString()} 条`);
     } catch (e) {
-      showToast('搜索失败: ' + e.message, 'error');
-      App.setStatus('搜索失败');
+      if (e.message && e.message.includes('请先加载日志文件')) {
+        App.showWelcome();
+        App.setStatus('请先加载日志文件');
+      } else {
+        showToast('搜索失败: ' + e.message, 'error');
+        App.setStatus('搜索失败');
+      }
     } finally {
       this.state.searching = false;
     }
