@@ -1,11 +1,3 @@
-const RULE_COLORS = [
-  { bg: '#fff3cd', border: '#ffc107', text: '#856404' },
-  { bg: '#d4edda', border: '#28a745', text: '#155724' },
-  { bg: '#d6eaf8', border: '#3498db', text: '#1a5276' },
-  { bg: '#f8d7da', border: '#e74c3c', text: '#721c24' },
-  { bg: '#e8daef', border: '#9b59b6', text: '#5b2c6f' },
-];
-
 const Rules = {
   _groups: [],
 
