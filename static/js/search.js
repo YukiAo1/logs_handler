@@ -33,6 +33,20 @@ const Search = {
     const current = input.value || '';
     const parts = current.match(/^(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})\.(\d{3})$/);
 
+    // 空日期时自动填入当前时间（毫秒为000）
+    if (!parts) {
+      const d = new Date();
+      const pad2 = n => String(n).padStart(2, '0');
+      input.value = `${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}.000`;
+    }
+    const updatedParts = input.value.match(/^(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})\.(\d{3})$/);
+    const mVal = updatedParts ? updatedParts[1] : '';
+    const dVal = updatedParts ? updatedParts[2] : '';
+    const hVal = updatedParts ? updatedParts[3] : '';
+    const minVal = updatedParts ? updatedParts[4] : '';
+    const sVal = updatedParts ? updatedParts[5] : '';
+    const msVal = updatedParts ? updatedParts[6] : '';
+
     const popup = document.createElement('div');
     popup.id = 'timePickerPopup';
     popup.style.cssText = `
@@ -42,13 +56,6 @@ const Search = {
       padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.5);
       display:flex;flex-direction:column;gap:10px;
     `;
-
-    const mVal = parts ? parts[1] : '';
-    const dVal = parts ? parts[2] : '';
-    const hVal = parts ? parts[3] : '';
-    const minVal = parts ? parts[4] : '';
-    const sVal = parts ? parts[5] : '';
-    const msVal = parts ? parts[6] : '';
 
     const dateRow = document.createElement('div');
     dateRow.style.cssText = 'display:flex;align-items:center;gap:6px;';
@@ -82,6 +89,7 @@ const Search = {
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
     btnRow.innerHTML = `
+      <button class="btn btn-sm" id="tpCloseBtn">关闭</button>
       <button class="btn btn-sm" id="tpNowBtn">🕐 现在</button>
       <button class="btn btn-sm btn-primary" id="tpOkBtn">确定</button>
     `;
@@ -90,6 +98,10 @@ const Search = {
     popup.appendChild(timeRow);
     popup.appendChild(btnRow);
     document.body.appendChild(popup);
+
+    document.getElementById('tpCloseBtn').onclick = () => {
+      this._hideTimePicker();
+    };
 
     document.getElementById('tpNowBtn').onclick = () => {
       const d = new Date();
@@ -113,14 +125,6 @@ const Search = {
       this._hideTimePicker();
       Search.onFilterChange();
     };
-
-    const closeOnClickOutside = (e) => {
-      if (!popup.contains(e.target) && e.target !== input) {
-        this._hideTimePicker();
-        document.removeEventListener('mousedown', closeOnClickOutside);
-      }
-    };
-    setTimeout(() => document.addEventListener('mousedown', closeOnClickOutside), 0);
   },
 
   getFilters() {
