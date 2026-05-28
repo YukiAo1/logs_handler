@@ -343,6 +343,8 @@ const Table = {
     table._resizeReady = true;
 
     headers.forEach((th, idx) => {
+      // 时间列（index 1）固定宽度，不允许调整
+      if (idx === 1) return;
       if (th.querySelector('.resize-handle')) return;
       const handle = document.createElement('div');
       handle.className = 'resize-handle';

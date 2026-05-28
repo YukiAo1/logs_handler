@@ -487,6 +487,9 @@ th:hover .resize-handle {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#logTable th.col-time {
+  width: 200px !important;
+}
 .se-btn {
   display: inline-flex;
   align-items: center;
@@ -499,11 +502,15 @@ th:hover .resize-handle {
   font-weight: 700;
   line-height: 1;
   margin: 0 1px;
+  margin-left: 5px;
   vertical-align: middle;
   user-select: none;
   opacity: 0.5;
   transition: opacity 0.15s, transform 0.15s;
   border: none;
+}
+.se-btn.se-end {
+  margin-left: 2px;
 }
 .se-btn:hover {
   opacity: 1;
