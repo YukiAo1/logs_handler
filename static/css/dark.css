@@ -502,7 +502,7 @@ th:hover .resize-handle {
   font-weight: 700;
   line-height: 1;
   margin: 0 1px;
-  margin-left: 5px;
+  margin-left: 15px;
   vertical-align: middle;
   user-select: none;
   opacity: 0.5;
@@ -510,7 +510,7 @@ th:hover .resize-handle {
   border: none;
 }
 .se-btn.se-end {
-  margin-left: 2px;
+  margin-left: 5px;
 }
 .se-btn:hover {
   opacity: 1;
