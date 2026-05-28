@@ -152,17 +152,17 @@ const Search = {
 
     upBtn.addEventListener('click', () => {
       const m = parseInt(mInput.value) || 0;
-      if (m <= 0) return;
-      const newM = Math.max(0, m - 1);
+      const n = Table._scenarioRowIndices.length;
+      if (n === 0) return;
+      const newM = Math.min(n, m + 1);
       mInput.value = newM;
       this._navigateIssue(newM);
     });
 
     downBtn.addEventListener('click', () => {
       const m = parseInt(mInput.value) || 0;
-      const n = Table._scenarioRowIndices.length;
-      if (n === 0) return;
-      const newM = Math.min(n, m + 1);
+      if (m <= 0) return;
+      const newM = Math.max(0, m - 1);
       mInput.value = newM;
       this._navigateIssue(newM);
     });
