@@ -73,6 +73,13 @@ def _search_single_file(
 
     if level_only and not pid and not tid and not tag_substr:
         if level_set and len(level_set) == 4:
+            batch = read_raw_lines_batch(index, start_line, end_line)
+            for i, raw in enumerate(batch):
+                line_no = start_line + i
+                if not raw:
+                    continue
+                if LOG_PATTERN.match(raw):
+                    matches.append((file_idx, line_no, None))
             return matches
         batch = read_raw_lines_batch(index, start_line, end_line)
         for i, raw in enumerate(batch):
