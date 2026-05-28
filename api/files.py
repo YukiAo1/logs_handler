@@ -207,6 +207,10 @@ async def upload_files(files: list[UploadFile] = File(...)):
         if not name.lower().endswith(('.log', '.txt')):
             continue
         save_path = os.path.join(_upload_dir, name)
+        # 先关闭已有的索引和 mmap，避免 Windows 文件锁定
+        if save_path in _file_indexes:
+            _file_indexes[save_path].close()
+            del _file_indexes[save_path]
         content = await f.read()
         with open(save_path, 'wb') as wf:
             wf.write(content)
