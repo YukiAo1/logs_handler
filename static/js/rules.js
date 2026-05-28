@@ -95,8 +95,8 @@ const Rules = {
 
     return `<div class="rule-item${isActive ? ' active' : ''}"
            draggable="true" data-id="${r.id}" data-group="${escapeHtml(r.group_name || '')}"${activeStyle}>
-        <div class="rule-name">${escapeHtml(r.name || '')}${badgeHtml}</div>
-        <div class="rule-pattern">${escapeHtml(r.pattern || '')}</div>
+        <div class="rule-name"${isActive ? ` style="color:${color.text};"` : ''}>${escapeHtml(r.name || '')}${badgeHtml}</div>
+        <div class="rule-pattern"${isActive ? ` style="color:${color.text};opacity:0.9;"` : ''}>${escapeHtml(r.pattern || '')}</div>
         <div class="rule-actions">
           <button class="btn btn-sm" data-action="edit" data-id="${r.id}">编辑</button>
           <button class="btn btn-sm btn-danger" data-action="delete" data-id="${r.id}">删除</button>
