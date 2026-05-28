@@ -37,86 +37,82 @@ const Search = {
     popup.id = 'timePickerPopup';
     popup.style.cssText = `
       position:fixed;z-index:9999;
-      top:${rect.bottom + 4}px;left:${rect.left}px;
+      top:${rect.bottom + 4}px;left:${Math.max(0, Math.min(rect.left, window.innerWidth - 340))}px;
       background:#2a2a40;border:1px solid #555;border-radius:8px;
-      padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.5);
-      display:flex;flex-direction:column;gap:8px;min-width:280px;
+      padding:12px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.5);
+      display:flex;flex-direction:column;gap:10px;
     `;
 
-    const segs = [
-      { label: '月', name: 'mm', max: 12, val: parts ? parts[1] : '' },
-      { label: '日', name: 'dd', max: 31, val: parts ? parts[2] : '' },
-      { label: '时', name: 'hh', max: 23, val: parts ? parts[3] : '' },
-      { label: '分', name: 'min', max: 59, val: parts ? parts[4] : '' },
-      { label: '秒', name: 'ss', max: 59, val: parts ? parts[5] : '' },
-      { label: '毫秒', name: 'ms', max: 999, val: parts ? parts[6] : '' },
-    ];
+    const mVal = parts ? parts[1] : '';
+    const dVal = parts ? parts[2] : '';
+    const hVal = parts ? parts[3] : '';
+    const minVal = parts ? parts[4] : '';
+    const sVal = parts ? parts[5] : '';
+    const msVal = parts ? parts[6] : '';
 
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
-    segs.forEach(s => {
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;';
-      const label = document.createElement('span');
-      label.textContent = s.label;
-      label.style.cssText = 'color:#aaa;font-size:10px;';
-      const inputField = document.createElement('input');
-      inputField.type = 'text';
-      inputField.inputMode = 'numeric';
-      inputField.maxLength = s.name === 'ms' ? 3 : 2;
-      inputField.placeholder = s.val || '00';
-      inputField.value = s.val;
-      inputField.dataset.segName = s.name;
-      inputField.dataset.max = s.max;
-      inputField.style.cssText = `
-        width:${s.name === 'ms' ? '48px' : '36px'};text-align:center;
-        background:#1a1a2e;color:#eee;border:1px solid #444;border-radius:4px;
-        padding:4px 2px;font-size:13px;
-      `;
-      inputField.addEventListener('input', () => {
-        let v = inputField.value.replace(/\D/g, '').slice(0, inputField.maxLength);
-        const max = parseInt(inputField.dataset.max);
-        if (v && parseInt(v) > max) v = String(max);
-        inputField.value = v;
-        Search._updateTimeInput(input);
-      });
-      inputField.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') Search._hideTimePicker();
-      });
-      wrap.appendChild(label);
-      wrap.appendChild(inputField);
-      row.appendChild(wrap);
-    });
+    const dateRow = document.createElement('div');
+    dateRow.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    dateRow.innerHTML = `
+      <span style="color:#aaa;font-size:12px;margin-right:2px;">日期</span>
+      <select id="tpMonth" style="background:#1a1a2e;color:#eee;border:1px solid #444;border-radius:4px;padding:4px 6px;font-size:13px;width:70px;">
+        <option value="">月</option>
+        ${Array.from({length:12}, (_,i) => `<option value="${String(i+1).padStart(2,'0')}"${mVal === String(i+1).padStart(2,'0') ? ' selected' : ''}>${i+1}月</option>`).join('')}
+      </select>
+      <span style="color:#888;">-</span>
+      <select id="tpDay" style="background:#1a1a2e;color:#eee;border:1px solid #444;border-radius:4px;padding:4px 6px;font-size:13px;width:65px;">
+        <option value="">日</option>
+        ${Array.from({length:31}, (_,i) => `<option value="${String(i+1).padStart(2,'0')}"${dVal === String(i+1).padStart(2,'0') ? ' selected' : ''}>${i+1}日</option>`).join('')}
+      </select>
+    `;
+
+    const timeRow = document.createElement('div');
+    timeRow.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    timeRow.innerHTML = `
+      <span style="color:#aaa;font-size:12px;margin-right:2px;">时间</span>
+      <input type="text" id="tpHour" value="${hVal}" placeholder="00" maxlength="2" style="width:36px;text-align:center;background:#1a1a2e;color:#eee;border:1px solid #444;border-radius:4px;padding:4px 2px;font-size:13px;">
+      <span style="color:#888;">:</span>
+      <input type="text" id="tpMin" value="${minVal}" placeholder="00" maxlength="2" style="width:36px;text-align:center;background:#1a1a2e;color:#eee;border:1px solid #444;border-radius:4px;padding:4px 2px;font-size:13px;">
+      <span style="color:#888;">:</span>
+      <input type="text" id="tpSec" value="${sVal}" placeholder="00" maxlength="2" style="width:36px;text-align:center;background:#1a1a2e;color:#eee;border:1px solid #444;border-radius:4px;padding:4px 2px;font-size:13px;">
+      <span style="color:#888;">.</span>
+      <input type="text" id="tpMs" value="${msVal}" placeholder="000" maxlength="3" style="width:48px;text-align:center;background:#1a1a2e;color:#eee;border:1px solid #444;border-radius:4px;padding:4px 2px;font-size:13px;">
+      <span style="color:#666;font-size:11px;">毫秒</span>
+    `;
 
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
-    const nowBtn = document.createElement('button');
-    nowBtn.textContent = '🕐 现在';
-    nowBtn.className = 'btn btn-sm';
-    nowBtn.onclick = () => {
+    btnRow.innerHTML = `
+      <button class="btn btn-sm" id="tpNowBtn">🕐 现在</button>
+      <button class="btn btn-sm btn-primary" id="tpOkBtn">确定</button>
+    `;
+
+    popup.appendChild(dateRow);
+    popup.appendChild(timeRow);
+    popup.appendChild(btnRow);
+    document.body.appendChild(popup);
+
+    document.getElementById('tpNowBtn').onclick = () => {
       const d = new Date();
       const pad2 = n => String(n).padStart(2, '0');
       const pad3 = n => String(n).padStart(3, '0');
-      const m = pad2(d.getMonth() + 1);
-      const day = pad2(d.getDate());
-      const h = pad2(d.getHours());
-      const min = pad2(d.getMinutes());
-      const s = pad2(d.getSeconds());
-      const ms = pad3(d.getMilliseconds());
-      input.value = `${m}-${day} ${h}:${min}:${s}.${ms}`;
+      input.value = `${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}.${pad3(d.getMilliseconds())}`;
       this._hideTimePicker();
       Search.onFilterChange();
     };
-    const okBtn = document.createElement('button');
-    okBtn.textContent = '确定';
-    okBtn.className = 'btn btn-sm btn-primary';
-    okBtn.onclick = () => { this._hideTimePicker(); Search.onFilterChange(); };
-    btnRow.appendChild(nowBtn);
-    btnRow.appendChild(okBtn);
 
-    popup.appendChild(row);
-    popup.appendChild(btnRow);
-    document.body.appendChild(popup);
+    document.getElementById('tpOkBtn').onclick = () => {
+      const m = document.getElementById('tpMonth').value;
+      const d = document.getElementById('tpDay').value;
+      const h = document.getElementById('tpHour').value.padStart(2, '0');
+      const min = document.getElementById('tpMin').value.padStart(2, '0');
+      const s = document.getElementById('tpSec').value.padStart(2, '0');
+      const ms = document.getElementById('tpMs').value.padStart(3, '0');
+      if (m && d) {
+        input.value = `${m}-${d} ${h}:${min}:${s}.${ms}`;
+      }
+      this._hideTimePicker();
+      Search.onFilterChange();
+    };
 
     const closeOnClickOutside = (e) => {
       if (!popup.contains(e.target) && e.target !== input) {
@@ -125,18 +121,6 @@ const Search = {
       }
     };
     setTimeout(() => document.addEventListener('mousedown', closeOnClickOutside), 0);
-  },
-
-  _updateTimeInput(input) {
-    const popup = document.getElementById('timePickerPopup');
-    if (!popup) return;
-    const fields = popup.querySelectorAll('input[data-seg-name]');
-    const vals = {};
-    fields.forEach(f => { vals[f.dataset.segName] = f.value.padStart(f.dataset.segName === 'ms' ? 3 : 2, '0'); });
-    const { mm, dd, hh, min, ss, ms } = vals;
-    if (mm && dd && hh && min && ss && ms) {
-      input.value = `${mm}-${dd} ${hh}:${min}:${ss}.${ms}`;
-    }
   },
 
   getFilters() {
