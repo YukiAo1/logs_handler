@@ -9,9 +9,11 @@ const RULE_COLORS = [
 const Table = {
   currentPattern: [],
   _items: [],
+  _scenarioRowIndices: [],
 
   render(items, patterns) {
     this.currentPattern = patterns || [];
+    this._scenarioRowIndices = [];
     const tbody = document.getElementById('logTableBody');
     this._items = items;
 
@@ -150,10 +152,12 @@ const Table = {
       const tbody = document.getElementById('logTableBody');
       if (!tbody) return;
       const rows = tbody.querySelectorAll('tr');
+      this._scenarioRowIndices = [];
       for (let i = 0; i < this._items.length && i < rows.length; i++) {
         const item = this._items[i];
         const matchedIds = matches[item.message];
         if (matchedIds && matchedIds.length) {
+          this._scenarioRowIndices.push(i);
           const msgCell = rows[i].querySelector('.col-msg-cell');
           if (msgCell) {
             const ids = matchedIds.join(',');
@@ -163,8 +167,28 @@ const Table = {
           }
         }
       }
+      Search._updateIssueTracker();
     } catch {
     }
+  },
+
+  scrollToIdx(rowIdx) {
+    const tbody = document.getElementById('logTableBody');
+    if (!tbody) return;
+    const rows = tbody.querySelectorAll('tr');
+    if (rowIdx < 0 || rowIdx >= rows.length) return;
+    const tr = rows[rowIdx];
+    const wrapper = document.getElementById('tableWrapper');
+    if (!wrapper) return;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const trRect = tr.getBoundingClientRect();
+    const scrollTop = tr.offsetTop - wrapper.offsetTop - (wrapperRect.height / 2) + (trRect.height / 2);
+    wrapper.scrollTop = Math.max(0, scrollTop);
+
+    tr.classList.remove('issue-flash');
+    void tr.offsetWidth;
+    tr.classList.add('issue-flash');
+    setTimeout(() => tr.classList.remove('issue-flash'), 1500);
   },
 
   _showTraceModal(result) {

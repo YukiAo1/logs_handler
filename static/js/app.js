@@ -11,6 +11,7 @@ const App = {
     this.setupDropZone();
     Table.initColumnResize();
     Search.initClearButtons();
+    Search._initIssueTracker();
     this._initSkin();
   },
 

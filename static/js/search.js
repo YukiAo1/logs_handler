@@ -142,4 +142,65 @@ const Search = {
       this.state.searching = false;
     }
   },
+
+  _initIssueTracker() {
+    const upBtn = document.getElementById('issueUp');
+    const downBtn = document.getElementById('issueDown');
+    const mInput = document.getElementById('issueM');
+    if (!upBtn || upBtn._trackerReady) return;
+    upBtn._trackerReady = true;
+
+    upBtn.addEventListener('click', () => {
+      const m = parseInt(mInput.value) || 0;
+      const n = Table._scenarioRowIndices.length;
+      if (n === 0) return;
+      const newM = Math.min(n, m + 1);
+      mInput.value = newM;
+      this._navigateIssue(newM);
+    });
+
+    downBtn.addEventListener('click', () => {
+      const m = parseInt(mInput.value) || 0;
+      if (m <= 0) return;
+      const newM = Math.max(0, m - 1);
+      mInput.value = newM;
+      this._navigateIssue(newM);
+    });
+
+    mInput.addEventListener('change', () => {
+      const n = Table._scenarioRowIndices.length;
+      let v = parseInt(mInput.value);
+      if (isNaN(v) || v < 0) v = 0;
+      if (v > n) v = n;
+      mInput.value = v;
+      this._navigateIssue(v);
+    });
+  },
+
+  _updateIssueTracker() {
+    const el = document.getElementById('issueTracker');
+    const nEl = document.getElementById('issueN');
+    const mInput = document.getElementById('issueM');
+    if (!el || !nEl || !mInput) return;
+    const n = Table._scenarioRowIndices.length;
+    if (n === 0) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'inline-flex';
+    nEl.textContent = n;
+    const m = parseInt(mInput.value) || 0;
+    if (m > n) {
+      mInput.value = n;
+    }
+  },
+
+  _navigateIssue(m) {
+    const n = Table._scenarioRowIndices.length;
+    if (n === 0 || m < 0 || m > n) return;
+    const idx = m === 0 ? -1 : Table._scenarioRowIndices[m - 1];
+    if (idx >= 0) {
+      Table.scrollToIdx(idx);
+    }
+  },
 };
