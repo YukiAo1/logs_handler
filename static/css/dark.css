@@ -50,6 +50,19 @@ html, body {
   white-space: nowrap;
 }
 
+.rg-indicator {
+  font-size: 13px;
+  margin-left: 4px;
+  line-height: 1;
+  cursor: default;
+}
+.rg-indicator.rg-on {
+  color: #4caf50;
+}
+.rg-indicator.rg-off {
+  color: #888;
+}
+
 .toolbar-actions {
   margin-left: auto;
   display: flex;

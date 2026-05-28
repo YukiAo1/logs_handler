@@ -41,4 +41,8 @@ def create_app() -> FastAPI:
             from fastapi.responses import FileResponse
             return FileResponse(os.path.join(STATIC_DIR, 'index.html'))
 
+    @app.get('/status')
+    async def status():
+        from engine.rg_search import is_available as rg_avail
+        return {'status': 'ok', 'rg_available': rg_avail()}
     return app

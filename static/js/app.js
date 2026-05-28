@@ -13,6 +13,24 @@ const App = {
     Search.initClearButtons();
     Search._initIssueTracker();
     this._initSkin();
+    this._checkStatus();
+  },
+
+  async _checkStatus() {
+    try {
+      const data = await API.get('/status');
+      const el = document.getElementById('rgIndicator');
+      if (!el) return;
+      if (data.rg_available) {
+        el.textContent = '⚡';
+        el.classList.add('rg-on');
+        el.title = 'ripgrep 搜索引擎已启用';
+      } else {
+        el.textContent = '🐍';
+        el.classList.add('rg-off');
+        el.title = 'Python 正则引擎 (放 rg.exe 到 bin/ 目录可加速)';
+      }
+    } catch {}
   },
 
   setupDropZone() {
