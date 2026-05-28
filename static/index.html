@@ -18,6 +18,7 @@
       <button class="btn" onclick="Compare.showCompareView()" title="对比两份日志">📊 对比</button>
       <button class="btn" onclick="Files.unloadAll()" title="卸载全部文件">🗑 卸载</button>
       <button class="btn" onclick="Scenarios.showManageDialog()" title="经典场景管理">📌 场景</button>
+      <button class="btn skin-btn" id="skinBtn" title="更换背景图片">🎨 皮肤</button>
       <input type="file" id="filePickerInput" multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
       <input type="file" id="folderPickerInput" webkitdirectory multiple accept=".log,.txt" style="display:none" onchange="Files.handleFolderPick(event)">
     </div>
@@ -100,7 +101,7 @@
         <div class="file-list" id="fileList"></div>
       </div>
       <div id="searchResult" style="display:none">
-        <div class="result-stats" id="resultStats"><span class="skin-btn" id="skinBtn" title="更换背景图片">🎨</span></div>
+        <div class="result-stats" id="resultStats"></div>
         <div class="table-wrapper" id="tableWrapper">
           <table id="logTable">
             <colgroup>
