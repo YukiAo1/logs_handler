@@ -31,6 +31,7 @@ def search(
     indexes: list[FileIndex],
     *,
     rule_pattern: str | None = None,
+    rule_patterns: list[tuple[int, str]] | None = None,
     levels: list[str] | None = None,
     pid: int | None = None,
     tid: int | None = None,
@@ -44,6 +45,11 @@ def search(
     all_matches = []
 
     compiled_rule = _get_pattern(rule_pattern) if rule_pattern else None
+
+    compiled_rules = None
+    if rule_patterns:
+        compiled_rules = [(rid, _get_pattern(p)) for rid, p in rule_patterns]
+
     compiled_keyword = _get_pattern(keyword) if keyword else None
     level_set = set(levels) if levels else None
     need_parse = bool(pid is not None or tid is not None or tag_substr)
@@ -87,19 +93,31 @@ def search(
                     if tag_substr and tag_substr.lower() not in m.group(6).lower():
                         continue
 
-            if compiled_rule and not compiled_rule.search(raw):
-                continue
+            matched_rule_id = None
+
+            if compiled_rules:
+                found = False
+                for rid, pat in compiled_rules:
+                    if pat.search(raw):
+                        found = True
+                        matched_rule_id = rid
+                        break
+                if not found:
+                    continue
+            elif compiled_rule:
+                if not compiled_rule.search(raw):
+                    continue
 
             if compiled_keyword and not compiled_keyword.search(raw):
                 continue
 
-            all_matches.append((file_idx, line_no))
+            all_matches.append((file_idx, line_no, matched_rule_id))
 
     total = len(all_matches)
     page_matches = all_matches[offset:offset + limit]
 
     results = []
-    for file_idx, line_no in page_matches:
+    for file_idx, line_no, matched_rule_id in page_matches:
         index = indexes[file_idx]
         raw = read_raw_line(index, line_no)
         entry = parse_line(raw, line_no, index.offsets[line_no])
@@ -115,6 +133,7 @@ def search(
                 'message': entry.message,
                 'raw': entry.raw,
                 'file_path': index.path,
+                'matched_rule_id': matched_rule_id,
             })
 
     return results, total

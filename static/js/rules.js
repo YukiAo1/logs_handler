@@ -1,3 +1,11 @@
+const RULE_COLORS = [
+  { bg: '#fff3cd', border: '#ffc107', text: '#856404' },
+  { bg: '#d4edda', border: '#28a745', text: '#155724' },
+  { bg: '#d6eaf8', border: '#3498db', text: '#1a5276' },
+  { bg: '#f8d7da', border: '#e74c3c', text: '#721c24' },
+  { bg: '#e8daef', border: '#9b59b6', text: '#5b2c6f' },
+];
+
 const Rules = {
   _groups: [],
 
@@ -5,9 +13,14 @@ const Rules = {
     return r.name && r.name.startsWith('__group_placeholder__');
   },
 
+  _getRuleColorIndex(ruleId) {
+    const ids = App.state.activeRuleIds;
+    const idx = ids.indexOf(ruleId);
+    return idx >= 0 ? idx : -1;
+  },
+
   _flatten(groups) {
     this._groups = groups;
-    // 过滤掉占位规则
     for (const g of groups) {
       g.rules = g.rules.filter(r => !this._isPlaceholder(r));
     }
@@ -51,7 +64,6 @@ const Rules = {
       }
 
       if (group.group_name) {
-        // 有名字的目录始终显示（即使空目录）
         const expanded = this._isGroupExpanded(group.group_name);
         if (kw && filtered.length === 0) continue;
         html += `<div class="rule-group" data-group="${escapeHtml(group.group_name)}">
@@ -79,9 +91,19 @@ const Rules = {
   },
 
   _renderRuleItem(r) {
-    return `<div class="rule-item${App.state.activeRuleId === r.id ? ' active' : ''}"
-           draggable="true" data-id="${r.id}" data-group="${escapeHtml(r.group_name || '')}">
-        <div class="rule-name">${escapeHtml(r.name || '')}</div>
+    const colorIdx = this._getRuleColorIndex(r.id);
+    const isActive = colorIdx >= 0;
+    const color = RULE_COLORS[colorIdx];
+    const activeStyle = isActive
+      ? ` style="background:${color.bg};border-left-color:${color.border};"`
+      : '';
+    const badgeHtml = isActive
+      ? `<span class="rule-color-badge" style="background:${color.border};color:#fff;font-size:9px;padding:0 5px;border-radius:8px;margin-left:4px;flex-shrink:0;">${colorIdx + 1}</span>`
+      : '';
+
+    return `<div class="rule-item${isActive ? ' active' : ''}"
+           draggable="true" data-id="${r.id}" data-group="${escapeHtml(r.group_name || '')}"${activeStyle}>
+        <div class="rule-name">${escapeHtml(r.name || '')}${badgeHtml}</div>
         <div class="rule-pattern">${escapeHtml(r.pattern || '')}</div>
         <div class="rule-actions">
           <button class="btn btn-sm" data-action="edit" data-id="${r.id}">编辑</button>
@@ -100,17 +122,11 @@ const Rules = {
   },
 
   _bindEvents(list) {
-    const activeId = () => App.state.activeRuleId;
-
     list.querySelectorAll('.rule-item').forEach(el => {
       el.addEventListener('click', (e) => {
         if (e.target.closest('[data-action]')) return;
         const id = parseInt(el.dataset.id);
-        App.state.activeRuleId = (activeId() === id) ? null : id;
-        Rules.loadRules();
-        if (App.state.activeRuleId) {
-          Search.onFilterChange();
-        }
+        this._toggleRule(id);
       });
     });
 
@@ -162,6 +178,22 @@ const Rules = {
     });
   },
 
+  _toggleRule(id) {
+    const ids = App.state.activeRuleIds;
+    const idx = ids.indexOf(id);
+    if (idx >= 0) {
+      ids.splice(idx, 1);
+    } else {
+      if (ids.length >= 5) {
+        showToast('最多同时选中 5 个规则', 'error');
+        return;
+      }
+      ids.push(id);
+    }
+    this.render();
+    Search.onFilterChange();
+  },
+
   _dragSrc: null,
 
   _initDragDrop(list) {
@@ -192,7 +224,6 @@ const Rules = {
         const srcIsGroup = src.matches('.rule-group-header');
         const tgtIsGroup = el.matches('.rule-group-header');
 
-        // 目录头 → 目录头：交换目录位置
         if (srcIsGroup && tgtIsGroup) {
           const srcGroup = src.closest('.rule-group')?.dataset?.group || '';
           const tgtGroup = el.closest('.rule-group')?.dataset?.group || '';
@@ -207,7 +238,6 @@ const Rules = {
           return;
         }
 
-        // 规则 → 规则 或 规则 → 目录头
         const srcId = parseInt(src.dataset.id, 10);
         if (isNaN(srcId)) return;
 
@@ -219,7 +249,7 @@ const Rules = {
 
         if (tgtIsGroup) {
           targetGroup = el.closest('.rule-group')?.dataset?.group || '';
-          targetOrder = -1;  // 信号量：放在目标目录末尾
+          targetOrder = -1;
         } else {
           const tgtId = parseInt(el.dataset.id, 10);
           if (isNaN(tgtId)) return;
@@ -414,7 +444,8 @@ const Rules = {
     if (!confirm('确定删除这条规则吗？')) return;
     try {
       await API.del(`/api/rules/${id}`);
-      if (App.state.activeRuleId === id) App.state.activeRuleId = null;
+      const idx = App.state.activeRuleIds.indexOf(id);
+      if (idx >= 0) App.state.activeRuleIds.splice(idx, 1);
       showToast('规则已删除', 'success');
       await this.loadRules();
     } catch (e) {
@@ -473,21 +504,17 @@ const Rules = {
   },
 };
 
-/* 搜索功能放在顶部 + 新建目录按钮 */
 (function initRulePanel() {
   const panel = document.getElementById('rulePanel');
   if (!panel) return;
-
   const header = panel.querySelector('.panel-header');
   const body = panel.querySelector('.panel-body');
-
   if (!document.getElementById('ruleSearchInput') && header && body) {
     const searchBar = document.createElement('div');
     searchBar.className = 'rule-search';
     searchBar.innerHTML = '<input type="text" id="ruleSearchInput" placeholder="搜索规则..." oninput="Rules.render()">';
     header.parentNode.insertBefore(searchBar, body);
   }
-
   const panelFooter = panel.querySelector('.panel-footer');
   if (!document.getElementById('createGroupBtn') && panelFooter) {
     const btn = document.createElement('button');

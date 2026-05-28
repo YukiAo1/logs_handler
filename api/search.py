@@ -2,7 +2,6 @@ import os
 import re
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
 
 from storage.database import get_db
 from api.files import _file_indexes
@@ -13,6 +12,7 @@ router = APIRouter(prefix='/api/search', tags=['search'])
 
 @router.get('')
 def search_logs(
+    rule_ids: str | None = Query(None),
     rule_id: int | None = Query(None),
     pattern: str | None = Query(None),
     level: str | None = Query(None),
@@ -28,9 +28,28 @@ def search_logs(
     if not _file_indexes:
         raise HTTPException(status_code=400, detail='请先加载日志文件')
 
+    db = get_db()
+
+    rule_patterns = None
     rule_pattern = None
-    if rule_id:
-        db = get_db()
+
+    if rule_ids:
+        ids = [r.strip() for r in rule_ids.split(',') if r.strip()]
+        patterns = []
+        for rid_str in ids:
+            try:
+                rid = int(rid_str)
+            except ValueError:
+                continue
+            row = db.execute(
+                'SELECT id, pattern FROM filter_rules WHERE id = ?', (rid,)
+            ).fetchone()
+            if row:
+                patterns.append((row['id'], row['pattern']))
+        if patterns:
+            rule_patterns = patterns
+        rule_pattern = None
+    elif rule_id:
         row = db.execute(
             'SELECT pattern FROM filter_rules WHERE id = ?', (rule_id,)
         ).fetchone()
@@ -58,6 +77,7 @@ def search_logs(
     items, total = search_engine(
         indexes,
         rule_pattern=rule_pattern,
+        rule_patterns=rule_patterns,
         levels=levels,
         pid=pid,
         tid=tid,

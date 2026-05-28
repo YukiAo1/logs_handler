@@ -57,7 +57,7 @@ const Search = {
     document.getElementById('filterTid').value = '';
     document.getElementById('filterTag').value = '';
     document.getElementById('filterKeyword').value = '';
-    App.state.activeRuleId = null;
+    App.state.activeRuleIds = [];
     Rules.render();
     this.state.offset = 0;
     this.state.currentPattern = '';
@@ -71,7 +71,7 @@ const Search = {
     const filters = this.getFilters();
     const hasFilters = filters.level || filters.pid || filters.tid || filters.tag
       || filters.time_start || filters.time_end || filters.keyword
-      || App.state.activeRuleId;
+      || App.state.activeRuleIds.length > 0;
 
     if (!hasFilters) {
       this.state.searching = false;
@@ -83,7 +83,9 @@ const Search = {
       limit: this.state.limit,
     };
 
-    if (App.state.activeRuleId) params.rule_id = App.state.activeRuleId;
+    if (App.state.activeRuleIds.length > 0) {
+      params.rule_ids = App.state.activeRuleIds.join(',');
+    }
     if (filters.level) params.level = filters.level;
     if (filters.pid) params.pid = filters.pid;
     if (filters.tid) params.tid = filters.tid;
@@ -98,15 +100,19 @@ const Search = {
     try {
       const result = await API.get('/api/search', params);
 
-      let pattern = filters.keyword || '';
-      if (!pattern && App.state.activeRuleId) {
-        const rule = App.state.rules.find(r => r.id === App.state.activeRuleId);
-        if (rule) pattern = rule.pattern;
+      let patterns = [];
+      if (App.state.activeRuleIds.length > 0) {
+        patterns = App.state.activeRuleIds.map(rid => {
+          const rule = App.state.rules.find(r => r.id === rid);
+          return rule ? { ruleId: rid, pattern: rule.pattern } : null;
+        }).filter(Boolean);
+      } else if (filters.keyword) {
+        patterns = [{ ruleId: null, pattern: filters.keyword }];
       }
-      this.state.currentPattern = pattern;
+      this.state.currentPattern = patterns;
       this.state.total = result.total_matches;
 
-      Table.render(result.items, pattern);
+      Table.render(result.items, patterns);
       Table.renderPagination(result.offset, result.limit, result.total_matches);
 
       const stats = document.getElementById('resultStats');

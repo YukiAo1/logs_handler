@@ -1,9 +1,17 @@
+const RULE_COLORS = [
+  { bg: '#fff3cd', border: '#ffc107', text: '#856404' },
+  { bg: '#d4edda', border: '#28a745', text: '#155724' },
+  { bg: '#d6eaf8', border: '#3498db', text: '#1a5276' },
+  { bg: '#f8d7da', border: '#e74c3c', text: '#721c24' },
+  { bg: '#e8daef', border: '#9b59b6', text: '#5b2c6f' },
+];
+
 const Table = {
-  currentPattern: '',
+  currentPattern: [],
   _items: [],
 
-  render(items, pattern) {
-    this.currentPattern = pattern || '';
+  render(items, patterns) {
+    this.currentPattern = patterns || [];
     const tbody = document.getElementById('logTableBody');
     this._items = items;
 
@@ -24,7 +32,7 @@ const Table = {
         `<td>${item.pid}</td>`,
         `<td>${item.tid}</td>`,
         `<td>${escapeHtml(item.tag)}</td>`,
-        `<td class="col-msg-cell">${this._highlight(item.message, item.raw)}</td>`,
+        `<td class="col-msg-cell">${this._highlight(item.message, item.matched_rule_id)}</td>`,
         `<td class="col-actions">
           <div class="action-wrap">
             <span class="action-btn act-copy" title="复制原始行">📋</span>
@@ -44,7 +52,6 @@ const Table = {
       tbody._delegationReady = true;
       tbody.addEventListener('click', (e) => {
         const target = e.target;
-        // 场景指示器点击
         if (target.classList.contains('scenario-indicator')) {
           const idsStr = target.dataset.scenarioIds;
           if (idsStr) {
@@ -70,7 +77,6 @@ const Table = {
       });
     }
 
-    // 异步匹配场景
     this._matchScenariosAsync();
   },
 
@@ -140,7 +146,6 @@ const Table = {
         }
       }
     } catch {
-      // 匹配失败不影响主流程
     }
   },
 
@@ -234,18 +239,46 @@ const Table = {
     }
   },
 
-  _highlight(message, raw) {
+  _highlight(message, matchedRuleId) {
     const escaped = escapeHtml(message);
-    if (!this.currentPattern) return escaped;
+    const patterns = this.currentPattern;
+    if (!patterns || patterns.length === 0) return escaped;
 
-    let pattern;
-    try {
-      pattern = new RegExp(this.currentPattern, 'gi');
-    } catch {
-      return escaped;
+    if (patterns.length === 1) {
+      const pat = patterns[0];
+      if (!pat.pattern) return escaped;
+      let re;
+      try {
+        re = new RegExp(pat.pattern, 'gi');
+      } catch {
+        return escaped;
+      }
+      return escaped.replace(re, m => `<span class="match-highlight">${m}</span>`);
     }
 
-    return escaped.replace(pattern, m => `<span class="match-highlight">${m}</span>`);
+    let result = escaped;
+    for (let i = 0; i < patterns.length; i++) {
+      const pat = patterns[i];
+      if (!pat.pattern) continue;
+      let re;
+      try {
+        re = new RegExp(pat.pattern, 'gi');
+      } catch {
+        continue;
+      }
+      const color = RULE_COLORS[i] || RULE_COLORS[0];
+      const isMatched = matchedRuleId != null && pat.ruleId != null && matchedRuleId === pat.ruleId;
+      if (isMatched) {
+        result = result.replace(re, m =>
+          `<span class="match-highlight match-c${i}" style="background:${color.bg};color:${color.text};">${m}</span>`
+        );
+      } else {
+        result = result.replace(re, m =>
+          `<span class="match-highlight">${m}</span>`
+        );
+      }
+    }
+    return result;
   },
 
   renderPagination(offset, limit, total) {
@@ -281,8 +314,6 @@ const Table = {
   initColumnResize() {
     const table = document.getElementById('logTable');
     if (!table) return;
-
-    // 如果已经初始化过，直接返回
     if (table._resizeReady) return;
 
     const cols = table.querySelectorAll('colgroup col');
@@ -294,35 +325,39 @@ const Table = {
     table._resizeReady = true;
 
     headers.forEach((th, idx) => {
-      // 避免重复添加手柄
       if (th.querySelector('.resize-handle')) return;
-
       const handle = document.createElement('div');
       handle.className = 'resize-handle';
-      handle.title = '拖拽调整列宽';
       th.appendChild(handle);
+      handle.style.position = 'absolute';
+      handle.style.right = '0';
+      handle.style.top = '0';
+      handle.style.bottom = '0';
+      handle.style.width = '4px';
+      handle.style.cursor = 'col-resize';
+      handle.style.zIndex = '1';
+
+      let startX, startWidth;
 
       handle.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const startX = e.clientX;
-
-        // col.offsetWidth 在 display:none 时为 0，用 th 的实际渲染宽度作为备用
+        startX = e.clientX;
         const col = cols[idx];
-        const startWidth = col.offsetWidth > 0 ? col.offsetWidth : th.offsetWidth;
-        if (startWidth <= 0) return;
-
-        const onMove = (ev) => {
-          const newW = Math.max(40, startWidth + (ev.clientX - startX));
-          col.style.width = newW + 'px';
-        };
-        const onUp = () => {
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
+        startWidth = col.style.width ? parseInt(col.style.width) : th.offsetWidth;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        e.preventDefault();
       });
+
+      function onMouseMove(e) {
+        const diff = e.clientX - startX;
+        const newWidth = Math.max(30, startWidth + diff);
+        if (cols[idx]) cols[idx].style.width = newWidth + 'px';
+      }
+
+      function onMouseUp() {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
     });
   },
 };

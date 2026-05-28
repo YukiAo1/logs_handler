@@ -1,7 +1,8 @@
 const App = {
   state: {
     rules: [],
-    activeRuleId: null,
+    activeRuleIds: [],
+    activeRuleColors: {},
     files: [],
   },
 

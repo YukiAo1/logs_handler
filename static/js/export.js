@@ -34,9 +34,10 @@ const Export = {
       const ruleId = box.querySelector('#exportRule').value;
 
       const filters = Search.getFilters();
+      const activeIds = App.state.activeRuleIds;
       const body = {
         format,
-        rule_id: ruleId ? parseInt(ruleId) : App.state.activeRuleId || undefined,
+        rule_id: ruleId ? parseInt(ruleId) : (activeIds.length === 1 ? activeIds[0] : undefined),
         level: filters.level || undefined,
         pid: filters.pid || undefined,
         tid: filters.tid || undefined,

@@ -479,6 +479,8 @@ th:hover .resize-handle {
   border-radius: 2px;
 }
 
+/* 多规则高亮颜色 — 不用额外样式，内联 style 直接设置 */
+
 .pagination {
   display: flex;
   align-items: center;
