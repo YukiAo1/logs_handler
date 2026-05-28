@@ -17,7 +17,7 @@ from api.scenarios import router as scenarios_router
 def create_app() -> FastAPI:
     init_db()
 
-    app = FastAPI(title='鸿蒙日志分析工具', version='0.1.0')
+    app = FastAPI(title='Hi Logs', version='0.1.0')
 
     app.add_middleware(
         CORSMiddleware,

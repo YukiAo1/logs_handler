@@ -11,6 +11,7 @@ const App = {
     this.setupDropZone();
     Table.initColumnResize();
     Search.initClearButtons();
+    this._initSkin();
   },
 
   setupDropZone() {
@@ -61,6 +62,58 @@ const App = {
 
   setStatus(text) {
     document.getElementById('statusText').textContent = text;
+  },
+
+  _initSkin() {
+    this._loadSkin();
+    const btn = document.getElementById('skinBtn');
+    if (!btn || btn._skinReady) return;
+    btn._skinReady = true;
+    btn.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          try { localStorage.setItem('h_logs_skin', dataUrl); } catch {}
+          App._applySkin(dataUrl);
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    });
+    btn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      try { localStorage.removeItem('h_logs_skin'); } catch {}
+      App._applySkin('');
+      showToast('背景已清除', 'success');
+    });
+  },
+
+  _applySkin(dataUrl) {
+    const el = document.getElementById('mainLayout');
+    if (!el) return;
+    if (dataUrl) {
+      el.style.backgroundImage = `url(${dataUrl})`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.backgroundRepeat = 'no-repeat';
+      el.classList.add('has-skin');
+    } else {
+      el.style.backgroundImage = '';
+      el.classList.remove('has-skin');
+    }
+  },
+
+  _loadSkin() {
+    try {
+      const saved = localStorage.getItem('h_logs_skin');
+      if (saved) this._applySkin(saved);
+    } catch {}
   },
 };
 

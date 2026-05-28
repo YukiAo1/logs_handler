@@ -110,7 +110,7 @@ def main():
 
     threading.Thread(target=open_browser, daemon=True).start()
 
-    print(f'鸿蒙日志分析工具已启动: http://{HOST}:{PORT}')
+    print(f'Hi Logs 已启动: http://{HOST}:{PORT}')
     print('按 Ctrl+C 退出')
     uvicorn.run(app, host=HOST, port=PORT, log_level='warning')
 

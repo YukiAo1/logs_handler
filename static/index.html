@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>鸿蒙日志分析工具</title>
+<title>Hi Logs</title>
 <link rel="stylesheet" href="/static/css/dark.css">
 </head>
 <body>
 
 <div id="app">
   <header id="toolbar">
-    <span class="logo">🔍 鸿蒙日志分析工具</span>
+    <span class="logo">🔍 Hi Logs</span>
     <div class="toolbar-actions">
       <button class="btn btn-primary" onclick="Files.showFilePicker()">📂 选择文件</button>
       <button class="btn" onclick="Files.showFolderPicker()">📁 选择文件夹</button>
@@ -100,7 +100,7 @@
         <div class="file-list" id="fileList"></div>
       </div>
       <div id="searchResult" style="display:none">
-        <div class="result-stats" id="resultStats"></div>
+        <div class="result-stats" id="resultStats"><span class="skin-btn" id="skinBtn" title="更换背景图片">🎨</span></div>
         <div class="table-wrapper" id="tableWrapper">
           <table id="logTable">
             <colgroup>

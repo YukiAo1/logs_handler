@@ -368,6 +368,37 @@ html, body {
   color: var(--text2);
   margin-bottom: 8px;
   padding: 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.skin-btn {
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+.skin-btn:hover {
+  opacity: 1;
+}
+
+#mainLayout {
+  position: relative;
+}
+#mainLayout.has-skin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 0;
+  pointer-events: none;
+}
+#mainLayout.has-skin > * {
+  position: relative;
+  z-index: 1;
 }
 
 .table-wrapper {
