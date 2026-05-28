@@ -7,6 +7,18 @@ const Search = {
     searching: false,
   },
 
+  initClearButtons() {
+    document.querySelectorAll('.filter-clear').forEach(el => {
+      el.addEventListener('click', () => {
+        const targetId = el.dataset.target;
+        if (targetId) {
+          document.getElementById(targetId).value = '';
+          Search.onFilterChange();
+        }
+      });
+    });
+  },
+
   getFilters() {
     const levels = [];
     document.querySelectorAll('#filterBar .level-check input:checked').forEach(cb => {

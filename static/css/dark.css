@@ -125,6 +125,33 @@ html, body {
 .filter-tag { width: 120px; }
 .filter-keyword { width: 360px; }
 
+.filter-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.filter-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #888;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 2px;
+  display: none;
+  user-select: none;
+}
+.filter-clear:hover {
+  color: #e74c3c;
+}
+.filter-input-wrap:hover .filter-clear,
+.filter-input-wrap .filter-input:focus ~ .filter-clear {
+  display: inline;
+}
+
 .toolbar-info {
   color: var(--text2);
   font-size: 12px;
@@ -452,8 +479,37 @@ th:hover .resize-handle {
 }
 
 .col-actions .action-wrap .action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#logTable td.col-se-cell {
+  padding: 0 2px;
+  white-space: nowrap;
+  text-align: center;
+}
+.se-btn {
+  display: inline-block;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 3px;
+  margin: 0 1px;
+  border-radius: 3px;
+  line-height: 1.4;
+  user-select: none;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.se-btn:hover {
   opacity: 1;
-  background: transparent;
+}
+.se-start {
+  background: #2980b9;
+  color: #fff;
+}
+.se-end {
+  background: #e67e22;
+  color: #fff;
 }
 
 .level-badge {

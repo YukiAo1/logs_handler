@@ -33,24 +33,42 @@
     </div>
     <div class="filter-group">
       <span class="filter-label">时间:</span>
-      <input type="text" id="filterTimeStart" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" onchange="Search.onFilterChange()">
+      <div class="filter-input-wrap">
+        <input type="text" id="filterTimeStart" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" autocomplete="off" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterTimeStart">✕</span>
+      </div>
       <span class="filter-sep">~</span>
-      <input type="text" id="filterTimeEnd" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" onchange="Search.onFilterChange()">
+      <div class="filter-input-wrap">
+        <input type="text" id="filterTimeEnd" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" autocomplete="off" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterTimeEnd">✕</span>
+      </div>
     </div>
     <div class="filter-group">
       <span class="filter-label">PID:</span>
-      <input type="text" id="filterPid" class="filter-input filter-short" placeholder="PID" onchange="Search.onFilterChange()">
+      <div class="filter-input-wrap">
+        <input type="text" id="filterPid" class="filter-input filter-short" placeholder="PID" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterPid">✕</span>
+      </div>
     </div>
     <div class="filter-group">
       <span class="filter-label">TID:</span>
-      <input type="text" id="filterTid" class="filter-input filter-short" placeholder="TID" onchange="Search.onFilterChange()">
+      <div class="filter-input-wrap">
+        <input type="text" id="filterTid" class="filter-input filter-short" placeholder="TID" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterTid">✕</span>
+      </div>
     </div>
     <div class="filter-group">
       <span class="filter-label">Tag:</span>
-      <input type="text" id="filterTag" class="filter-input filter-tag" placeholder="模糊匹配" onchange="Search.onFilterChange()">
+      <div class="filter-input-wrap">
+        <input type="text" id="filterTag" class="filter-input filter-tag" placeholder="模糊匹配" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterTag">✕</span>
+      </div>
     </div>
     <div class="filter-group">
-      <input type="text" id="filterKeyword" class="filter-input filter-keyword" placeholder="临时关键字/正则" onkeydown="if(event.key==='Enter')Search.onFilterChange()">
+      <div class="filter-input-wrap">
+        <input type="text" id="filterKeyword" class="filter-input filter-keyword" placeholder="临时关键字/正则" onkeydown="if(event.key==='Enter')Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterKeyword">✕</span>
+      </div>
     </div>
     <button class="btn btn-primary" onclick="Search.onFilterChange()">🔍 搜索</button>
     <button class="btn" onclick="Search.clearFilters()">✕ 清除</button>
@@ -87,8 +105,8 @@
           <table id="logTable">
             <colgroup>
               <col style="width:60px">
-              <col style="width:58px">
-              <col style="width:110px">
+              <col style="width:150px">
+              <col style="width:40px">
               <col style="width:42px">
               <col style="width:58px">
               <col style="width:58px">
@@ -99,8 +117,8 @@
             <thead>
               <tr>
                 <th class="col-no">行号</th>
-                <th class="col-date">日期</th>
                 <th class="col-time">时间</th>
+                <th class="col-se"></th>
                 <th class="col-level">级别</th>
                 <th class="col-pid">PID</th>
                 <th class="col-tid">TID</th>

@@ -24,10 +24,11 @@ const Table = {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const tr = document.createElement('tr');
+      const timeStr = `${escapeHtml(item.date)} ${escapeHtml(item.time)}`;
       tr.innerHTML = [
         `<td>${item.line_no}</td>`,
-        `<td>${escapeHtml(item.date)}</td>`,
-        `<td>${escapeHtml(item.time)}</td>`,
+        `<td class="col-time-cell">${timeStr}</td>`,
+        `<td class="col-se-cell"><span class="se-btn se-start" title="以此时间作为开始">S</span><span class="se-btn se-end" title="以此时间作为结束">E</span></td>`,
         `<td><span class="level-badge level-${item.level}">${item.level}</span></td>`,
         `<td>${item.pid}</td>`,
         `<td>${item.tid}</td>`,
@@ -60,6 +61,25 @@ const Table = {
           }
           return;
         }
+
+        const seBtn = target.closest('.se-btn');
+        if (seBtn) {
+          const tr = seBtn.closest('tr');
+          if (!tr) return;
+          const idx = parseInt(tr.dataset.rowIdx);
+          if (isNaN(idx) || !Table._items[idx]) return;
+          const item = Table._items[idx];
+          const timeVal = `${item.date} ${item.time}`;
+          if (!/^\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}$/.test(timeVal)) return;
+          if (seBtn.classList.contains('se-start')) {
+            document.getElementById('filterTimeStart').value = timeVal;
+          } else {
+            document.getElementById('filterTimeEnd').value = timeVal;
+          }
+          Search.onFilterChange();
+          return;
+        }
+
         const btn = target.closest('.action-btn');
         if (!btn) return;
         const tr = btn.closest('tr');

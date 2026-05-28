@@ -10,6 +10,7 @@ const App = {
     Rules.loadRules();
     this.setupDropZone();
     Table.initColumnResize();
+    Search.initClearButtons();
   },
 
   setupDropZone() {
