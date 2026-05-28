@@ -121,8 +121,6 @@ def find_time_range(index: FileIndex, time_start: float, time_end: float) -> tup
     total = index.total_lines
     start_line = _bisect_left(read_timestamp, time_start, 0, total)
     end_line = _bisect_right(read_timestamp, time_end, start_line, total)
-    start_line = max(0, start_line - 1)
-    end_line = min(total, end_line + 1)
     return start_line, end_line
 
 
