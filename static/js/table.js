@@ -1,9 +1,9 @@
 const RULE_COLORS = [
-  { bg: '#ffee58', border: '#f9a825', text: '#3e2723' },
-  { bg: '#66bb6a', border: '#2e7d32', text: '#1b5e20' },
-  { bg: '#42a5f5', border: '#1565c0', text: '#0d47a1' },
-  { bg: '#ef5350', border: '#c62828', text: '#b71c1c' },
-  { bg: '#ab47bc', border: '#6a1b9a', text: '#4a148c' },
+  { bg: '#fff9c4', border: '#f9a825', text: '#3e2723' },
+  { bg: '#c8e6c9', border: '#43a047', text: '#1b5e20' },
+  { bg: '#bbdefb', border: '#1e88e5', text: '#0d47a1' },
+  { bg: '#ffcdd2', border: '#e53935', text: '#b71c1c' },
+  { bg: '#e1bee7', border: '#8e24aa', text: '#4a148c' },
 ];
 
 const Table = {
