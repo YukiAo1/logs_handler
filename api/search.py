@@ -74,7 +74,7 @@ def search_logs(
 
     indexes = list(_file_indexes.values())
 
-    items, total = search_engine(
+    items, total, engine = search_engine(
         indexes,
         rule_pattern=rule_pattern,
         rule_patterns=rule_patterns,
@@ -94,6 +94,7 @@ def search_logs(
         'total_matches': total,
         'offset': offset,
         'limit': min(limit, 2000),
+        'engine': engine,
     }
 
 

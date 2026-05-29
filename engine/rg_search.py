@@ -122,3 +122,63 @@ def match_lines_parallel(lines: list[str], pattern: str, max_workers: int = None
     fn = partial(_worker_match, pattern_str=pattern)
     with ProcessPoolExecutor(max_workers=max_workers) as exe:
         return list(exe.map(fn, lines, chunksize=200))
+
+
+_RG_STARTUP_MS = 1500.0
+_RG_PER_MB_MS = 30.0
+_PY_SIMPLE_PER_MB_MS = 12.0
+_PY_COMPLEX_PER_MB_MS = 55.0
+
+
+def _is_complex_pattern(pattern: str) -> bool:
+    stripped = pattern.strip()
+    if '|' in stripped:
+        return True
+    if '\\' in stripped and any(c in stripped for c in 'dDwWsSbB'):
+        return True
+    if stripped.startswith('(') or stripped.endswith(')'):
+        return True
+    if '{' in stripped and '}' in stripped:
+        return True
+    return False
+
+
+def estimate_mb(lines: int) -> float:
+    return lines * 90 / 1024 / 1024
+
+
+def smart_decision(
+    pattern_strs: list[str],
+    estimated_lines: int,
+    multi_rule: bool = False,
+) -> dict:
+    if not is_available():
+        return {'engine': 'python', 'reason': 'rg.exe 未安装'}
+
+    if estimated_lines <= 0:
+        return {'engine': 'python', 'reason': '无数据'}
+
+    mb = estimate_mb(estimated_lines)
+
+    any_complex = any(_is_complex_pattern(p) for p in pattern_strs) if pattern_strs else False
+    num_rules = len(pattern_strs) if pattern_strs else 0
+
+    if not pattern_strs:
+        return {'engine': 'python', 'reason': '无正则,不走rg'}
+
+    py_per_mb = _PY_COMPLEX_PER_MB_MS if any_complex or multi_rule else _PY_SIMPLE_PER_MB_MS
+    py_cost = py_per_mb * mb
+    rg_cost = _RG_STARTUP_MS + _RG_PER_MB_MS * mb
+
+    if rg_cost < py_cost:
+        return {
+            'engine': 'rg',
+            'reason': (f'rg: {rg_cost:.0f}ms < Python: {py_cost:.0f}ms '
+                       f'({mb:.0f}MB, {"复杂" if any_complex else "简单"}正则, {num_rules}规则)'),
+        }
+
+    return {
+        'engine': 'python',
+        'reason': (f'Python: {py_cost:.0f}ms <= rg: {rg_cost:.0f}ms '
+                   f'({mb:.0f}MB, {"复杂" if any_complex else "简单"}正则)'),
+    }

@@ -112,13 +112,13 @@ def main():
 
     from engine.rg_search import is_available as rg_avail, fail_reason as rg_reason
     if rg_avail():
-        print('  bin/rg.exe 已就绪 (用于扩展功能)')
+        print('  bin/rg.exe 已就绪 (智能模式: 大文件+复杂正则自动启用)')
     else:
         reason = rg_reason()
         if reason:
             print(f'  bin/rg.exe 不可用: {reason}')
         else:
-            print('  bin/rg.exe 未安装 (下载后放入 bin/ 目录即可)')
+            print('  bin/rg.exe 未安装 (如需rg加速，下载后放入 bin/ 目录)')
 
     print(f'Hi Logs 已启动: http://{HOST}:{PORT}')
     print('按 Ctrl+C 退出')

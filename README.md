@@ -54,7 +54,15 @@ python -m PyInstaller build.spec --clean --noconfirm
 
 ### 安装 ripgrep（可选）
 
-从 [GitHub Releases](https://github.com/BurntSushi/ripgrep/releases) 下载 `rg.exe`，放入项目 `bin/` 目录即可。目前作为扩展工具留存，搜索核心使用 Python 正则（mmap 内存读取比子进程更快）。
+从 [GitHub Releases](https://github.com/BurntSushi/ripgrep/releases) 下载 `rg.exe`，放入项目 `bin/` 目录即可启用**智能搜索模式**。系统会根据文件大小和正则复杂度自动选择最优引擎：
+
+| 条件 | 引擎 |
+|---|---|
+| 小文件 + 简单正则 | 🐍 Python mmap |
+| 大文件（> 50MB）+ 复杂正则 | ⚡ ripgrep 子进程 |
+| 多规则 OR 组合 + 大文件 | ⚡ ripgrep 子进程 |
+
+搜索完成后在结果栏显示 `| 引擎: ⚡rg` 或 `| 引擎: 🐍Python`，可直观看到本次搜索用了哪个引擎。
 
 ## 使用指南
 

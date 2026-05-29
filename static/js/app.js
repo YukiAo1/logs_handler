@@ -22,14 +22,15 @@ const App = {
       const el = document.getElementById('rgIndicator');
       if (!el) return;
       if (data.rg_available) {
-        el.textContent = '🔧';
+        el.textContent = '⚡';
         el.classList.add('rg-on');
         el.classList.remove('rg-off');
-        el.title = 'bin/rg.exe 已就绪 (用于扩展功能)';
+        el.title = 'bin/rg.exe 已就绪 | 智能模式: 大文件+复杂正则自动切换';
       } else {
-        el.textContent = '';
-        el.classList.remove('rg-on', 'rg-off');
-        el.title = '';
+        el.textContent = '🐍';
+        el.classList.add('rg-off');
+        el.classList.remove('rg-on');
+        el.title = 'Python 引擎 | 放 rg.exe 到 bin/ 目录可启用智能加速';
       }
     } catch {}
   },

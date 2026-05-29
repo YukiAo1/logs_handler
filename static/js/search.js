@@ -128,7 +128,8 @@ const Search = {
       Table.renderPagination(result.offset, result.limit, result.total_matches);
 
       const stats = document.getElementById('resultStats');
-      stats.textContent = `匹配: ${result.total_matches.toLocaleString()} 条`;
+      const engineLabel = result.engine === 'rg' ? '⚡rg' : '🐍Python';
+      stats.textContent = `匹配: ${result.total_matches.toLocaleString()} 条 | 引擎: ${engineLabel}`;
       App.setStatus(`匹配 ${result.total_matches.toLocaleString()} 条`);
     } catch (e) {
       if (e.message && e.message.includes('请先加载日志文件')) {
