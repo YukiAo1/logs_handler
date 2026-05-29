@@ -52,9 +52,9 @@ python -m PyInstaller build.spec --clean --noconfirm
 
 `dist/` 目录下还附带 `clear.bat`，可手动清理端口 20306 的占用进程。
 
-### 安装 ripgrep（可选，大幅提升搜索性能）
+### 安装 ripgrep（可选）
 
-从 [GitHub Releases](https://github.com/BurntSushi/ripgrep/releases) 下载 `rg.exe`，放入项目 `bin/` 目录即可自动启用。正则匹配性能提升 10-100 倍。
+从 [GitHub Releases](https://github.com/BurntSushi/ripgrep/releases) 下载 `rg.exe`，放入项目 `bin/` 目录即可。目前作为扩展工具留存，搜索核心使用 Python 正则（mmap 内存读取比子进程更快）。
 
 ## 使用指南
 
@@ -332,10 +332,8 @@ MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
 
 - **批量 mmap 读取**：`read_raw_lines_batch()` 一次读取多行减少 decode 开销，大文件搜索提速 2-3 倍
 - **多文件并行搜索**：`ThreadPoolExecutor` 同时搜索多个文件，多文件场景线性加速
-- **ripgrep 接口**：预留 `rg.exe` 检测与调用接口，系统安装 ripgrep 后可自动启用，正则匹配速度提升 10-100 倍
-- **纯级别过滤优化**：全级别命中时直接跳过（无需遍历），非全级别时批量读取快速过滤
-- **进程池正则**：通过 `ProcessPoolExecutor` 支持 CPU 多核并行正则匹配
-- **构建优化**：`build.spec` 自动检测并打包 `rg.exe` 到 `dist/` 目录
+- **纯级别过滤优化**：全级别命中时快速批量过滤
+- **搜索路径简化**：移除 rg 子进程调用（mmap 内存读取比子进程更快），纯 Python 正则引擎已是最优路径
 
 ## 性能数据（v6.0 更新）
 
@@ -350,7 +348,7 @@ MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
 | 双文件对比 | 1.5s | 1.5s | - |
 | TXT 导出（25K 行） | < 3s | < 3s | - |
 
-> 如果系统安装了 ripgrep（`rg.exe` 在 PATH 中），正则搜索性能可进一步提升 5-10 倍。
+> 搜索核心使用 Python 正则引擎（mmap 内存读取比子进程更快），`rg.exe` 作为扩展工具预留。
 
 ## 项目结构
 
@@ -364,8 +362,8 @@ logs_handler/
 ├── engine/
 │   ├── parser.py        # 正则解析单行日志
 │   ├── indexer.py       # mmap 行偏移索引 + 二分时间查找 + 批量读取
-│   ├── rg_search.py     # ripgrep 包装 + ProcessPool 正则加速
-│   ├── filter_engine.py # 多级筛选引擎（支持多规则 OR + 并行搜索 + ripgrep）
+│   ├── rg_search.py     # [预留] 外部工具包装（rg/进程池）
+│   ├── filter_engine.py # 多级筛选引擎（多规则 OR + ThreadPool 并行）
 │   └── comparator.py    # 对比引擎（规则命中 + 级别分布）
 ├── api/
 │   ├── rules.py         # 规则 CRUD + 分组/拖拽/导入导出
@@ -394,7 +392,7 @@ logs_handler/
     ├── logs_handler.exe # PyInstaller 打包产物
     └── clear.bat        # 端口清理脚本
 bin/
-    └── rg.exe           # [可选] ripgrep 搜索引擎，放入后自动启用
+    └── rg.exe           # [预留] 外部工具
 ```
 
 ## v5.0 更新日志

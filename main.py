@@ -112,13 +112,13 @@ def main():
 
     from engine.rg_search import is_available as rg_avail, fail_reason as rg_reason
     if rg_avail():
-        print('⚡ ripgrep 已启用 (bin/rg.exe)')
+        print('  bin/rg.exe 已就绪 (用于扩展功能)')
     else:
         reason = rg_reason()
         if reason:
-            print(f'  ripgrep 未启用: {reason}')
+            print(f'  bin/rg.exe 不可用: {reason}')
         else:
-            print('  ripgrep 未安装，使用 Python 正则引擎 (放 rg.exe 到 bin/ 目录可加速)')
+            print('  bin/rg.exe 未安装 (下载后放入 bin/ 目录即可)')
 
     print(f'Hi Logs 已启动: http://{HOST}:{PORT}')
     print('按 Ctrl+C 退出')

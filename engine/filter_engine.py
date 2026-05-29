@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from engine.indexer import FileIndex, read_raw_line, read_raw_lines_batch, find_time_range
 from engine.parser import parse_line, LOG_PATTERN
-from engine.rg_search import is_available as rg_available, search_lines, match_lines_parallel, parse_lines_parallel
 
 _pattern_cache = {}
 
@@ -16,16 +15,6 @@ def _get_pattern(pattern_str: str) -> re.Pattern:
         except re.error:
             _pattern_cache[pattern_str] = re.compile(re.escape(pattern_str), re.IGNORECASE)
     return _pattern_cache[pattern_str]
-
-
-_use_rg = None
-
-
-def _check_rg():
-    global _use_rg
-    if _use_rg is None:
-        _use_rg = rg_available()
-    return _use_rg
 
 
 def _parse_ts_str(ts: str) -> float:
@@ -53,8 +42,6 @@ def _search_single_file(
     tag_substr: str | None,
     ts_start: float | None,
     ts_end: float | None,
-    use_rg: bool,
-    rg_pattern: str | None,
 ) -> list[tuple]:
     matches = []
 
@@ -68,76 +55,6 @@ def _search_single_file(
 
     if start_line >= end_line:
         return matches
-
-    level_only = not compiled_rules and not compiled_rule and not compiled_keyword
-
-    if level_only and not pid and not tid and not tag_substr:
-        if level_set and len(level_set) == 4:
-            batch = read_raw_lines_batch(index, start_line, end_line)
-            for i, raw in enumerate(batch):
-                line_no = start_line + i
-                if not raw:
-                    continue
-                if LOG_PATTERN.match(raw):
-                    matches.append((file_idx, line_no, None))
-            return matches
-        batch = read_raw_lines_batch(index, start_line, end_line)
-        for i, raw in enumerate(batch):
-            line_no = start_line + i
-            if not raw:
-                continue
-            m = LOG_PATTERN.match(raw)
-            if not m:
-                continue
-            if level_set and m.group(5) not in level_set:
-                continue
-            matches.append((file_idx, line_no, None))
-        return matches
-
-    if use_rg and (compiled_rules or compiled_rule or compiled_keyword):
-        pattern_str = rg_pattern
-        if pattern_str:
-            rg_hits = search_lines(index.path, pattern_str)
-            if rg_hits:
-                line_nos = [ln for ln in rg_hits if start_line <= ln < end_line]
-                if pid is not None or tid is not None or tag_substr or level_set:
-                    batch = read_raw_lines_batch(index, min(line_nos), max(line_nos) + 1) if line_nos else []
-                    line_map = {}
-                    if line_nos:
-                        base = min(line_nos)
-                        for j, raw in enumerate(batch):
-                            line_map[base + j] = raw
-                    for ln in sorted(line_nos):
-                        raw = line_map.get(ln)
-                        if raw is None:
-                            raw = read_raw_line(index, ln)
-                        if level_set or pid is not None or tid is not None or tag_substr:
-                            m = LOG_PATTERN.match(raw)
-                            if not m:
-                                continue
-                            if level_set and m.group(5) not in level_set:
-                                continue
-                            if pid is not None:
-                                try:
-                                    if int(m.group(3)) != pid:
-                                        continue
-                                except ValueError:
-                                    continue
-                            if tid is not None:
-                                try:
-                                    if int(m.group(4)) != tid:
-                                        continue
-                                except ValueError:
-                                    continue
-                            if tag_substr and tag_substr.lower() not in m.group(6).lower():
-                                continue
-                        matched_rule_id = None
-                        if compiled_rules:
-                            for rid, _ in compiled_rules:
-                                matched_rule_id = rid
-                                break
-                        matches.append((file_idx, ln, matched_rule_id))
-            return matches
 
     batch = read_raw_lines_batch(index, start_line, end_line)
     for i, raw in enumerate(batch):
@@ -204,8 +121,6 @@ def search(
     offset: int = 0,
     limit: int = 500,
 ) -> tuple[list, int]:
-    use_rg = _check_rg()
-
     compiled_rule = _get_pattern(rule_pattern) if rule_pattern else None
 
     compiled_rules = None
@@ -216,18 +131,6 @@ def search(
     level_set = set(levels) if levels else None
     ts_start = _parse_ts_str(time_start) if time_start else None
     ts_end = _parse_ts_str(time_end) if time_end else None
-
-    rg_pattern = None
-    if use_rg:
-        if rule_patterns:
-            rg_parts = [f'(?:{p})' for _, p in rule_patterns]
-            rg_pattern = '|'.join(rg_parts)
-        elif rule_pattern:
-            rg_pattern = rule_pattern
-        if keyword and rg_pattern:
-            rg_pattern = f'(?:{rg_pattern})|(?:{keyword})'
-        elif keyword:
-            rg_pattern = keyword
 
     parallel = len(indexes) > 1
 
@@ -240,7 +143,7 @@ def search(
                     index, file_idx,
                     compiled_rules, compiled_rule, compiled_keyword,
                     level_set, pid, tid, tag_substr,
-                    ts_start, ts_end, use_rg, rg_pattern,
+                    ts_start, ts_end,
                 ): file_idx
                 for file_idx, index in enumerate(indexes)
             }
@@ -254,7 +157,7 @@ def search(
                 index, file_idx,
                 compiled_rules, compiled_rule, compiled_keyword,
                 level_set, pid, tid, tag_substr,
-                ts_start, ts_end, use_rg, rg_pattern,
+                ts_start, ts_end,
             )
             all_matches.extend(result)
 
