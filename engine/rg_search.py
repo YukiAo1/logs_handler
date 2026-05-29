@@ -8,10 +8,11 @@ from config import TOOLS_DIR
 
 _RG_AVAILABLE = None
 _RG_PATH = None
+_RG_FAIL_REASON = ''
 
 
 def _find_rg():
-    global _RG_AVAILABLE, _RG_PATH
+    global _RG_AVAILABLE, _RG_PATH, _RG_FAIL_REASON
     if _RG_AVAILABLE is not None:
         return _RG_AVAILABLE
     candidates = ['rg', 'rg.exe']
@@ -27,8 +28,14 @@ def _find_rg():
             if r.returncode == 0:
                 _RG_AVAILABLE = True
                 _RG_PATH = exe
+                _RG_FAIL_REASON = ''
                 return True
-        except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        except FileNotFoundError:
+            continue
+        except OSError as e:
+            _RG_FAIL_REASON = f'找到 {exe} 但无法运行: {e}'
+            continue
+        except subprocess.TimeoutExpired:
             continue
     _RG_AVAILABLE = False
     return False
@@ -36,6 +43,11 @@ def _find_rg():
 
 def is_available():
     return _find_rg()
+
+
+def fail_reason() -> str:
+    _find_rg()
+    return _RG_FAIL_REASON
 
 
 def search_lines(file_path: str, pattern: str) -> set[int]:

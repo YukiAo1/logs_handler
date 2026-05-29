@@ -24,11 +24,13 @@ const App = {
       if (data.rg_available) {
         el.textContent = '⚡';
         el.classList.add('rg-on');
+        el.classList.remove('rg-off');
         el.title = 'ripgrep 搜索引擎已启用';
       } else {
         el.textContent = '🐍';
         el.classList.add('rg-off');
-        el.title = 'Python 正则引擎 (放 rg.exe 到 bin/ 目录可加速)';
+        el.classList.remove('rg-on');
+        el.title = data.rg_reason || 'Python 正则引擎 (放 rg.exe 到 bin/ 目录可加速)';
       }
     } catch {}
   },

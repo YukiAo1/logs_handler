@@ -43,6 +43,7 @@ def create_app() -> FastAPI:
 
     @app.get('/status')
     async def status():
-        from engine.rg_search import is_available as rg_avail
-        return {'status': 'ok', 'rg_available': rg_avail()}
+        from engine.rg_search import is_available as rg_avail, fail_reason as rg_reason
+        avail = rg_avail()
+        return {'status': 'ok', 'rg_available': avail, 'rg_reason': rg_reason() if not avail else ''}
     return app

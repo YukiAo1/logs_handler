@@ -110,11 +110,15 @@ def main():
 
     threading.Thread(target=open_browser, daemon=True).start()
 
-    from engine.rg_search import is_available as rg_avail
+    from engine.rg_search import is_available as rg_avail, fail_reason as rg_reason
     if rg_avail():
         print('⚡ ripgrep 已启用 (bin/rg.exe)')
     else:
-        print('  ripgrep 未安装，使用 Python 正则引擎 (放 rg.exe 到 bin/ 目录可加速)')
+        reason = rg_reason()
+        if reason:
+            print(f'  ripgrep 未启用: {reason}')
+        else:
+            print('  ripgrep 未安装，使用 Python 正则引擎 (放 rg.exe 到 bin/ 目录可加速)')
 
     print(f'Hi Logs 已启动: http://{HOST}:{PORT}')
     print('按 Ctrl+C 退出')
