@@ -15,10 +15,11 @@ def _make_key(
     time_start: str | None,
     time_end: str | None,
     keyword: str | None,
+    engine_mode: str = 'smart',
 ) -> str:
     raw = json.dumps(
         (rule_pattern, rule_patterns, levels, pid, tid,
-         tag_substr, time_start, time_end, keyword),
+         tag_substr, time_start, time_end, keyword, engine_mode),
         sort_keys=True, default=str
     )
     return hashlib.md5(raw.encode()).hexdigest()

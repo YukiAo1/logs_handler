@@ -441,6 +441,7 @@ def search(
         rule_pattern, rule_patterns, levels,
         pid, tid, tag_substr,
         time_start, time_end, keyword,
+        engine_mode,
     )
 
     cached = get_cached(cache_key)
