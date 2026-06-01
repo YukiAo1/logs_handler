@@ -462,7 +462,7 @@ def search(
     has_time = time_start or time_end
 
     no_real_filter = not has_filter and not has_level and not has_time
-    if no_real_filter:
+    if no_real_filter and engine_mode != 'rg':
         results, total, _, raw = _search_via_python(
             indexes, rule_pattern, rule_patterns, levels,
             pid, tid, tag_substr, time_start, time_end,
@@ -474,6 +474,18 @@ def search(
             f"offset={offset} limit={limit} "
             f"total_ms={elapsed*1000:.0f}")
         return results, total, 'python'
+    if no_real_filter and engine_mode == 'rg':
+        results, total, _, raw = _search_via_python(
+            indexes, rule_pattern, rule_patterns, levels,
+            pid, tid, tag_substr, time_start, time_end,
+            keyword, offset, limit, 'python',
+        )
+        elapsed = time.perf_counter() - t_start
+        query_logger.info(
+            f"no_filter_rg_mode | rows={total_lines} mb={mb:.0f} "
+            f"offset={offset} limit={limit} "
+            f"total_ms={elapsed*1000:.0f}")
+        return results, total, 'rg'
 
     meta = (
         f"rows={total_lines} mb={mb:.0f} offset={offset} limit={limit} "
