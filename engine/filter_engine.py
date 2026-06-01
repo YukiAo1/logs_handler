@@ -171,7 +171,7 @@ def _search_via_rg(
         paths_with_time.append((file_idx, index, start_line, end_line))
 
     if not paths_with_time or not rg_pat:
-        return [], 0, 'rg'
+        return [], 0, 'rg', []
 
     ft0 = time.perf_counter()
     all_paths = [it[1].path for it in paths_with_time]
@@ -460,6 +460,20 @@ def search(
                       tag_substr or pid is not None or tid is not None)
     has_level = levels and len(levels) < 4
     has_time = time_start or time_end
+
+    no_real_filter = not has_filter and not has_level and not has_time
+    if no_real_filter:
+        results, total, _, raw = _search_via_python(
+            indexes, rule_pattern, rule_patterns, levels,
+            pid, tid, tag_substr, time_start, time_end,
+            keyword, offset, limit, 'python',
+        )
+        elapsed = time.perf_counter() - t_start
+        query_logger.info(
+            f"no_filter_shortcut | rows={total_lines} mb={mb:.0f} "
+            f"offset={offset} limit={limit} "
+            f"total_ms={elapsed*1000:.0f}")
+        return results, total, 'python'
 
     meta = (
         f"rows={total_lines} mb={mb:.0f} offset={offset} limit={limit} "

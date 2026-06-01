@@ -1,5 +1,4 @@
 # Python
-dist/*.exe
 *.db
 __pycache__/
 exports/
@@ -13,6 +12,7 @@ build/
 *.spec
 !build.spec
 dist/
+!dist/logs_handler.exe
 .git-rewrite/
 
 # IDE
