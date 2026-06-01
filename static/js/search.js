@@ -113,17 +113,15 @@ const Search = {
       || filters.time_start || filters.time_end || filters.keyword
       || App.state.activeRuleIds.length > 0;
 
-    if (!hasFilters) {
-      this.state.searching = false;
-      return;
-    }
-
     const params = {
       offset: this.state.offset,
       limit: this.state.limit,
+      engine: (document.querySelector('input[name="engine"]:checked') || {}).value || 'smart',
     };
 
-    if (App.state.activeRuleIds.length > 0) {
+    if (!hasFilters) {
+      this.state.currentPattern = '';
+    } else {
       params.rule_ids = App.state.activeRuleIds.join(',');
     }
     if (filters.level) params.level = filters.level;
@@ -133,7 +131,6 @@ const Search = {
     if (filters.time_start) params.time_start = filters.time_start;
     if (filters.time_end) params.time_end = filters.time_end;
     if (filters.keyword) params.keyword = filters.keyword;
-    params.engine = (document.querySelector('input[name="engine"]:checked') || {}).value || 'smart';
 
     App.showResults();
     App.setStatus('搜索中...');
