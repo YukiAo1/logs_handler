@@ -1,0 +1,141 @@
+import os
+import re
+import time
+
+from fastapi import APIRouter, HTTPException, Query
+
+from storage.database import get_db
+from api.files import _file_indexes
+from engine.filter_engine import search as search_engine
+from engine.logger import search_logger, error_logger
+
+router = APIRouter(prefix='/api/search', tags=['search'])
+
+
+@router.get('')
+def search_logs(
+    rule_ids: str | None = Query(None),
+    rule_id: int | None = Query(None),
+    pattern: str | None = Query(None),
+    level: str | None = Query(None),
+    pid: int | None = Query(None),
+    tid: int | None = Query(None),
+    tag: str | None = Query(None),
+    time_start: str | None = Query(None),
+    time_end: str | None = Query(None),
+    keyword: str | None = Query(None),
+    offset: int = Query(0),
+    limit: int = Query(500),
+    engine: str = Query('smart'),
+):
+    if not _file_indexes:
+        raise HTTPException(status_code=400, detail='请先加载日志文件')
+
+    db = get_db()
+
+    rule_patterns = None
+    rule_pattern = None
+
+    if rule_ids:
+        ids = [r.strip() for r in rule_ids.split(',') if r.strip()]
+        patterns = []
+        for rid_str in ids:
+            try:
+                rid = int(rid_str)
+            except ValueError:
+                continue
+            row = db.execute(
+                'SELECT id, pattern FROM filter_rules WHERE id = ?', (rid,)
+            ).fetchone()
+            if row:
+                patterns.append((row['id'], row['pattern']))
+        if patterns:
+            rule_patterns = patterns
+        rule_pattern = None
+    elif rule_id:
+        row = db.execute(
+            'SELECT pattern FROM filter_rules WHERE id = ?', (rule_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail='规则不存在')
+        rule_pattern = row['pattern']
+    elif pattern:
+        try:
+            re.compile(pattern)
+        except re.error as e:
+            raise HTTPException(status_code=400, detail=f'正则表达式无效: {e}')
+        rule_pattern = pattern
+
+    levels = None
+    if level:
+        levels = [l.strip().upper() for l in level.split(',') if l.strip()]
+        for lv in levels:
+            if lv not in 'DIWE':
+                raise HTTPException(status_code=400, detail=f'无效的日志级别: {lv}')
+        if not levels:
+            levels = None
+
+    indexes = list(_file_indexes.values())
+
+    t0 = time.perf_counter()
+    items, total, used_engine = search_engine(
+        indexes,
+        rule_pattern=rule_pattern,
+        rule_patterns=rule_patterns,
+        levels=levels,
+        pid=pid,
+        tid=tid,
+        tag_substr=tag,
+        time_start=time_start,
+        time_end=time_end,
+        keyword=keyword,
+        offset=offset,
+        limit=min(limit, 2000),
+        engine_mode=engine,
+    )
+    elapsed = time.perf_counter() - t0
+
+    search_logger.info(
+        f"request | engine={engine} used={used_engine} "
+        f"total_matches={total} returned={len(items)} "
+        f"total_ms={elapsed*1000:.0f} | "
+        f"offset={offset} limit={min(limit,2000)}")
+
+    if len(items) != min(limit, 2000) and total > min(limit, 2000):
+        error_logger.warning(
+            f"result_mismatch | expected={min(limit,2000)} got={len(items)} "
+            f"total_matches={total} engine={used_engine}")
+
+    return {
+        'items': items,
+        'total_matches': total,
+        'offset': offset,
+        'limit': min(limit, 2000),
+        'engine': used_engine,
+    }
+
+
+@router.get('/count')
+def count_matches(
+    rule_id: int | None = Query(None),
+):
+    if not _file_indexes:
+        raise HTTPException(status_code=400, detail='请先加载日志文件')
+    if not rule_id:
+        raise HTTPException(status_code=400, detail='请指定 rule_id')
+
+    db = get_db()
+    row = db.execute(
+        'SELECT pattern FROM filter_rules WHERE id = ?', (rule_id,)
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail='规则不存在')
+
+    indexes = list(_file_indexes.values())
+    _, total, _ = search_engine(
+        indexes,
+        rule_pattern=row['pattern'],
+        offset=0,
+        limit=1,
+    )
+    return {'rule_id': rule_id, 'total_matches': total}

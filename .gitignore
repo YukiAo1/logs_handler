@@ -1,0 +1,43 @@
+# Python
+dist/*.exe
+*.db
+__pycache__/
+exports/
+bin/*.exe
+!bin/rg.exe
+*.py[cod]
+*.egg-info/
+build/
+
+# PyInstaller
+*.spec
+!build.spec
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# 运行时数据
+*.log
+logs_handler.db
+logs_handler.db-shm
+logs_handler.db-wal
+exports/
+dist/exports/
+dist/logs_handler.db-shm
+dist/logs_handler.db-wal
+dist/logs_handler.db
+uploads/
+
+# AI 开发辅助目录（调测脚本、临时日志、草稿文件）
+ForAi/
+
+# OS
+Thumbs.db
+.DS_Store

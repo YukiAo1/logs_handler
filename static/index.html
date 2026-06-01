@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hi Logs</title>
+<link rel="stylesheet" href="/static/css/dark.css">
+</head>
+<body>
+
+<div id="app">
+  <header id="toolbar">
+    <span class="logo">🔍 Hi Logs</span><span class="rg-indicator" id="rgIndicator" title="搜索引擎状态"></span>
+    <div class="toolbar-actions">
+      <button class="btn btn-primary" onclick="Files.showFilePicker()">📂 选择文件</button>
+      <button class="btn" onclick="Files.showFolderPicker()">📁 选择文件夹</button>
+      <button class="btn" onclick="Export.showExportDialog()" title="导出筛选结果">📤 导出</button>
+      <button class="btn" onclick="Compare.showCompareView()" title="对比两份日志">📊 对比</button>
+      <button class="btn" onclick="Files.unloadAll()" title="卸载全部文件">🗑 卸载</button>
+      <button class="btn" onclick="Scenarios.showManageDialog()" title="经典场景管理">📌 场景</button>
+      <button class="btn skin-btn" id="skinBtn" title="更换背景图片">🎨 皮肤</button>
+      <input type="file" id="filePickerInput" multiple accept=".log,.txt" style="display:none" onchange="Files.handleFilePick(event)">
+      <input type="file" id="folderPickerInput" webkitdirectory multiple accept=".log,.txt" style="display:none" onchange="Files.handleFolderPick(event)">
+    </div>
+  </header>
+
+  <div id="loadingOverlay" class="loading-overlay" style="display:none">
+    <div class="loading-box">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">正在索引文件...</div>
+      <div class="loading-progress" id="loadingProgress">
+        <div class="loading-progress-bar" id="loadingProgressBar"></div>
+      </div>
+      <div class="loading-count" id="loadingCount"></div>
+    </div>
+  </div>
+
+  <div id="searchLoadingOverlay" class="loading-overlay search-loading" style="display:none">
+    <div class="loading-box">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">查询中...</div>
+    </div>
+  </div>
+
+  <div id="filterBar" style="display:none">
+    <div class="filter-group">
+      <span class="filter-label">级别:</span>
+      <label class="level-check"><input type="checkbox" value="D" onchange="Search.onFilterChange()" checked>D</label>
+      <label class="level-check"><input type="checkbox" value="I" onchange="Search.onFilterChange()" checked>I</label>
+      <label class="level-check"><input type="checkbox" value="W" onchange="Search.onFilterChange()" checked>W</label>
+      <label class="level-check"><input type="checkbox" value="E" onchange="Search.onFilterChange()" checked>E</label>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">时间:</span>
+      <div class="filter-input-wrap">
+        <input type="text" id="filterTimeStart" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" autocomplete="off" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterTimeStart">✕</span>
+      </div>
+      <span class="filter-sep">~</span>
+      <div class="filter-input-wrap">
+        <input type="text" id="filterTimeEnd" class="filter-input filter-time" placeholder="MM-DD HH:MM:SS.mmm" autocomplete="off" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterTimeEnd">✕</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">PID:</span>
+      <div class="filter-input-wrap">
+        <input type="text" id="filterPid" class="filter-input filter-short" placeholder="PID" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterPid">✕</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">TID:</span>
+      <div class="filter-input-wrap">
+        <input type="text" id="filterTid" class="filter-input filter-short" placeholder="TID" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterTid">✕</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Tag:</span>
+      <div class="filter-input-wrap">
+        <input type="text" id="filterTag" class="filter-input filter-tag" placeholder="模糊匹配" onchange="Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterTag">✕</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-input-wrap">
+        <input type="text" id="filterKeyword" class="filter-input filter-keyword" placeholder="临时关键字/正则" onkeydown="if(event.key==='Enter')Search.onFilterChange()">
+        <span class="filter-clear" data-target="filterKeyword">✕</span>
+      </div>
+    </div>
+    <div class="filter-group engine-selector">
+      <span class="filter-label">引擎:</span>
+      <label class="engine-radio"><input type="radio" name="engine" value="smart" onchange="Search.onEngineChange()" checked>🤖 智能</label>
+      <label class="engine-radio"><input type="radio" name="engine" value="rg" onchange="Search.onEngineChange()">⚡ RG</label>
+      <label class="engine-radio"><input type="radio" name="engine" value="python" onchange="Search.onEngineChange()">🐍 Python</label>
+    </div>
+    <button class="btn btn-primary" onclick="Search.onFilterChange()">🔍 搜索</button>
+    <button class="btn" onclick="Search.clearFilters()">✕ 清除</button>
+    <div class="issue-tracker" id="issueTracker" style="display:none">
+      <span class="issue-label">疑似问题：</span>
+      <input type="text" id="issueM" class="issue-input" value="0" inputmode="numeric">
+      <span class="issue-sep">/</span>
+      <span class="issue-n" id="issueN">0</span>
+      <button class="issue-btn" id="issueUp" title="上一个">↑</button>
+      <button class="issue-btn" id="issueDown" title="下一个">↓</button>
+    </div>
+  </div>
+
+  <div id="mainLayout">
+    <aside id="rulePanel">
+      <div class="panel-header">
+        <h3>筛选规则</h3>
+      </div>
+      <div class="panel-body" id="ruleList">
+        <p class="placeholder">暂无规则，点击下方按钮新建</p>
+      </div>
+      <div class="panel-footer">
+        <button class="btn btn-primary" onclick="Rules.showCreateDialog()">+ 新建</button>
+        <button class="btn" onclick="Rules.exportRules()" title="导出规则为 JSON">📤 导出</button>
+        <button class="btn" onclick="Rules.showImportDialog()" title="从 JSON 导入规则">📥 导入</button>
+      </div>
+    </aside>
+
+    <main id="content">
+      <div id="welcome">
+        <div class="drop-zone" id="dropZone">
+          <h2>📂 拖拽日志文件或文件夹到此处</h2>
+          <p>支持 .log / .txt 格式，可同时加载多个文件</p>
+          <button class="btn btn-primary" onclick="Files.showFilePicker()" style="margin-top:12px">选择文件</button>
+          <button class="btn" onclick="Files.showFolderPicker()" style="margin-top:12px">选择文件夹</button>
+        </div>
+        <div class="file-list" id="fileList"></div>
+      </div>
+      <div id="searchResult" style="display:none">
+        <div class="result-stats" id="resultStats"></div>
+        <div class="table-wrapper" id="tableWrapper">
+          <table id="logTable">
+            <colgroup>
+              <col style="width:60px">
+              <col style="width:200px">
+              <col style="width:42px">
+              <col style="width:58px">
+              <col style="width:58px">
+              <col style="width:200px">
+              <col>
+              <col style="width:180px">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-no">行号</th>
+                <th class="col-time">时间</th>
+                <th class="col-level">级别</th>
+                <th class="col-pid">PID</th>
+                <th class="col-tid">TID</th>
+                <th class="col-tag">Tag</th>
+                <th class="col-msg">消息</th>
+                <th class="col-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody id="logTableBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+      <div id="compareView" style="display:none">
+        <div class="compare-header">
+          <button class="btn btn-sm" onclick="Compare.hideCompareView()">← 返回</button>
+          <span>日志对比</span>
+        </div>
+        <div class="compare-content" id="compareContent"></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="statusBar">
+    <span id="statusText">就绪</span>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/app.js"></script>
+<script src="/static/js/table.js"></script>
+<script src="/static/js/search.js"></script>
+<script src="/static/js/rules.js"></script>
+<script src="/static/js/files.js"></script>
+<script src="/static/js/export.js"></script>
+<script src="/static/js/compare.js"></script>
+<script src="/static/js/scenarios.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => Scenarios.load());
+</script>
+</body>
+</html>
