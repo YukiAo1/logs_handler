@@ -449,12 +449,13 @@ def search(
         page_raw = cached[offset:offset + limit]
         page_built = _build_results_from_matches(page_raw, indexes)
         elapsed = time.perf_counter() - t_start
+        used = 'rg' if engine_mode == 'rg' else 'python'
         query_logger.info(
             f"cached | rows={total_lines} mb={mb:.0f} offset={offset} limit={limit} "
             f"levels={levels or 'all'} keyword={keyword or ''} "
             f"engine_mode={engine_mode} cache_hits={total} "
             f"total_ms={elapsed*1000:.0f}")
-        return page_built, total, 'cached'
+        return page_built, total, used
 
     has_filter = bool(rule_pattern or rule_patterns or keyword or
                       tag_substr or pid is not None or tid is not None)
@@ -462,7 +463,20 @@ def search(
     has_time = time_start or time_end
 
     no_real_filter = not has_filter and not has_level and not has_time
-    if no_real_filter and engine_mode != 'rg':
+    if no_real_filter and engine_mode == 'rg':
+        results, total, _, raw = _search_via_python(
+            indexes, rule_pattern, rule_patterns, levels,
+            pid, tid, tag_substr, time_start, time_end,
+            keyword, offset, limit, 'python',
+        )
+        elapsed = time.perf_counter() - t_start
+        query_logger.info(
+            f"no_filter_rg | rows={total_lines} mb={mb:.0f} "
+            f"offset={offset} limit={limit} "
+            f"total_ms={elapsed*1000:.0f}")
+        set_cache(cache_key, raw)
+        return results, total, 'rg'
+    if no_real_filter:
         results, total, _, raw = _search_via_python(
             indexes, rule_pattern, rule_patterns, levels,
             pid, tid, tag_substr, time_start, time_end,
@@ -473,19 +487,8 @@ def search(
             f"no_filter_shortcut | rows={total_lines} mb={mb:.0f} "
             f"offset={offset} limit={limit} "
             f"total_ms={elapsed*1000:.0f}")
+        set_cache(cache_key, raw)
         return results, total, 'python'
-    if no_real_filter and engine_mode == 'rg':
-        results, total, _, raw = _search_via_python(
-            indexes, rule_pattern, rule_patterns, levels,
-            pid, tid, tag_substr, time_start, time_end,
-            keyword, offset, limit, 'python',
-        )
-        elapsed = time.perf_counter() - t_start
-        query_logger.info(
-            f"no_filter_rg_mode | rows={total_lines} mb={mb:.0f} "
-            f"offset={offset} limit={limit} "
-            f"total_ms={elapsed*1000:.0f}")
-        return results, total, 'rg'
 
     meta = (
         f"rows={total_lines} mb={mb:.0f} offset={offset} limit={limit} "
