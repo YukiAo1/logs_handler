@@ -13,6 +13,7 @@ build/
 *.spec
 !build.spec
 dist/
+.git-rewrite/
 
 # IDE
 .vscode/
