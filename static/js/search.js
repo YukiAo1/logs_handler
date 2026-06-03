@@ -60,8 +60,11 @@ const Search = {
     const timeEnd = document.getElementById('filterTimeEnd').value.trim();
     const keyword = document.getElementById('filterKeyword').value.trim();
 
+    // 全选4个级别等同于"不限级别"，不传level参数
+    const allLevels = levels.length === 4;
+
     return {
-      level: levels.length > 0 ? levels.join(',') : null,
+      level: (!allLevels && levels.length > 0) ? levels.join(',') : null,
       pid: pidVal ? parseInt(pidVal) || null : null,
       tid: tidVal ? parseInt(tidVal) || null : null,
       tag: tagVal || null,
@@ -122,15 +125,17 @@ const Search = {
     if (!hasFilters) {
       this.state.currentPattern = '';
     } else {
-      params.rule_ids = App.state.activeRuleIds.join(',');
+      if (App.state.activeRuleIds.length > 0) {
+        params.rule_ids = App.state.activeRuleIds.join(',');
+      }
+      if (filters.level) params.level = filters.level;
+      if (filters.pid) params.pid = filters.pid;
+      if (filters.tid) params.tid = filters.tid;
+      if (filters.tag) params.tag = filters.tag;
+      if (filters.time_start) params.time_start = filters.time_start;
+      if (filters.time_end) params.time_end = filters.time_end;
+      if (filters.keyword) params.keyword = filters.keyword;
     }
-    if (filters.level) params.level = filters.level;
-    if (filters.pid) params.pid = filters.pid;
-    if (filters.tid) params.tid = filters.tid;
-    if (filters.tag) params.tag = filters.tag;
-    if (filters.time_start) params.time_start = filters.time_start;
-    if (filters.time_end) params.time_end = filters.time_end;
-    if (filters.keyword) params.keyword = filters.keyword;
 
     App.showResults();
     App.setStatus('搜索中...');
