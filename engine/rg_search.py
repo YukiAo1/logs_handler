@@ -177,11 +177,8 @@ def build_rg_pattern(
     levels: list[str] | None,
     keyword: str | None,
 ) -> str:
+    """Build rg pattern - only rule/keyword parts. Post-filter handles levels/PID/TID/tag."""
     parts = []
-
-    if levels and len(levels) < 4:
-        level_chars = ''.join(levels)
-        parts.append(f'^\\d{{2}}-\\d{{2}}\\s+\\d{{2}}:\\d{{2}}:\\d{{2}}\\.\\d{{3}}\\s+\\d+\\s+\\d+\\s+[{level_chars}]\\s+')
 
     if rule_patterns:
         sub = [f'(?:{p})' for _, p in rule_patterns]
