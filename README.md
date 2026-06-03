@@ -92,7 +92,7 @@ python main.py --clearlog
 
 ### 结果缓存
 
-搜索结果（匹配行号列表）自动缓存。条件不变时翻页/改 limit **直接从缓存切片**，无需重新扫描。条件改变（如改级别/关键字/规则）自动清除缓存重新搜索。
+搜索结果（匹配行号列表）自动缓存。条件不变时翻页/改 limit **直接从缓存切片**，无需重新扫描。条件改变（如改级别/关键字/规则/引擎/文件）自动清除缓存重新搜索。
 
 ## 使用指南
 
@@ -312,33 +312,23 @@ MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
 | TXT 导出（25K 行） | < 3s |
 | 场景批量匹配（500条场景） | < 0.5s |
 
+## v8.0 更新日志
+
+- **⚡ rg 批量并行扫描**：单文件/多文件使用 ripgrep 子进程批量扫描，97 文件从 106s 降至 3~5s
+- **💾 搜索结果缓存**：匹配行号列表自动缓存，翻页/改 limit 直接从缓存切片，翻页 ~0.01s（~1000x 加速）
+- **✅ rg 结果正确性修复**：修复 AND 语义、keyword post-filter 过滤失效、行号解析错误
+- **🎯 搜索引擎选择**：🤖智能 / ⚡RG / 🐍Python 三引擎可选手动切换，切换即时保存偏好
+- **🧹 清理日志目录**：`python main.py --clearlog` 一键清理运行日志，不影响过滤规则
+- **🚀 全量搜索短路**：无过滤条件时 5ms 返回全量数据，避免不必要的引擎开销
+- **🔧 缓存隔离修复**：缓存 key 加入 engine_mode 和文件 generation 计数，文件变更/切引擎自动重新搜索
+- **📦 rg.exe 外置+提交**：rg.exe 不打包进 exe 减小体积，提交到仓库开箱即用
+- **🐛 前端级别过滤修复**：全选 4 级别视为"不限"，取消规则后正确发送无过滤请求
+
 ## v7.0 更新日志
 
 - **智能搜索模式**：根据文件大小 + 正则复杂度自动选择最优引擎（Python mmap / ripgrep 子进程）
 - **rg 智能决策**：大文件（>50MB）+ 复杂正则自动启用 rg，小文件 + 简单正则用 Python，结果栏显示 `| 引擎: ⚡rg / 🐍Python`
 - **rg 热路径回归**：rg 子进程仅在智能决策判定快于 Python 时才启用，避免不必要的进程开销
-
-## v6.0 更新日志
-
-- **批量 mmap 读取**：`read_raw_lines_batch()` 一次读取多行减少 decode 开销，大文件搜索提速 2-3 倍
-- **多文件并行搜索**：`ThreadPoolExecutor` 同时搜索多个文件，多文件场景线性加速
-- **纯级别过滤优化**：全级别命中时快速批量过滤
-- **搜索路径简化**：移除 rg 子进程调用（mmap 内存读取比子进程更快），纯 Python 正则引擎已是最优路径
-
-## 性能数据（v6.0 更新）
-
-测试环境：Windows 10, Python 3.11, 500K 行 / 45.7MB 日志文件 × 2 个文件
-
-| 操作 | v4.0 | v6.0 | 加速比 |
-|------|------|------|--------|
-| 文件加载 + 建索引 | 2.0s | 2.0s | - |
-| 全量搜索（所有级别） | 1.1s | **0.8s** | 1.4x |
-| 正则筛选（200K 命中） | 2.2s | **1.2s** | 1.8x |
-| 双文件搜索（2 个 500K 文件） | 2.8s | **1.0s** | 2.8x |
-| 双文件对比 | 1.5s | 1.5s | - |
-| TXT 导出（25K 行） | < 3s | < 3s | - |
-
-> 搜索核心使用 Python 正则引擎（mmap 内存读取比子进程更快），`rg.exe` 作为扩展工具预留。
 
 ## 项目结构
 
@@ -347,19 +337,15 @@ logs_handler/
 ├── main.py              # 入口：启动服务 + --clearlog 清理日志
 ├── config.py            # 全局配置（路径/端口20306/限制/工具目录）
 ├── app.py               # FastAPI 应用工厂 + 引擎配置API + 路由注册
-├── build.spec           # PyInstaller 打包配置（自动检测 bin/rg.exe）
+├── build.spec           # PyInstaller 打包配置
 ├── requirements.txt     # 依赖清单
-├── logs/                # 运行日志目录（自动创建）
-│   ├── query.log        # 引擎查询耗时日志
-│   ├── search.log       # API请求概览日志
-│   └── error.log        # 异常/结果不匹配日志
+├── ForAi/               # 测试脚本/日志（开发辅助，不提交）
 ├── engine/
 │   ├── parser.py        # 正则解析单行日志
 │   ├── indexer.py       # mmap 行偏移索引 + 二分时间查找 + 批量读取
 │   ├── rg_search.py     # ripgrep 包装（单文件/批量扫描 + 行号解析）
 │   ├── filter_engine.py # 多级筛选引擎（rg批量/Python双引擎 + 结果缓存）
-│   ├── logger.py        # 日志工具（RotatingFileHandler）
-│   ├── search_cache.py  # 搜索结果缓存（条件hash + 内存存储）
+│   ├── search_cache.py  # 搜索结果缓存（条件hash + 文件generation）
 │   └── comparator.py    # 对比引擎（规则命中 + 级别分布）
 ├── api/
 │   ├── rules.py         # 规则 CRUD + 分组/拖拽/导入导出
@@ -378,7 +364,7 @@ logs_handler/
 │       ├── api.js       # HTTP 请求封装
 │       ├── app.js       # 应用状态管理 + 皮肤功能
 │       ├── table.js     # 表格渲染 + S/E 按钮 + 跟踪弹窗
-│       ├── search.js    # 搜索筛选逻辑 + 输入框 X 清除
+│       ├── search.js    # 搜索筛选逻辑 + 引擎选择
 │       ├── rules.js     # 规则管理（分组/拖拽/搜索/复选）
 │       ├── files.js     # 文件加载
 │       ├── export.js    # 导出功能
@@ -388,7 +374,7 @@ logs_handler/
     ├── logs_handler.exe # PyInstaller 打包产物
     └── clear.bat        # 端口清理脚本
 bin/
-    └── rg.exe           # [预留] 外部工具
+    └── rg.exe           # [仓库中] ripgrep 搜索引擎工具
 ```
 
 ## v5.0 更新日志
