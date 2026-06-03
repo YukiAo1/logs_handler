@@ -94,6 +94,22 @@ python main.py --clearlog
 
 搜索结果（匹配行号列表）自动缓存。条件不变时翻页/改 limit **直接从缓存切片**，无需重新扫描。条件改变（如改级别/关键字/规则/引擎/文件）自动清除缓存重新搜索。
 
+### 自动化测试
+
+修改代码后运行以下命令验证引擎一致性：
+
+```bash
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+或一键测试+打包：
+
+```bash
+build.bat
+```
+
+测试覆盖 12 组 55+ 断言：纯级别过滤、关键字搜索、规则模式、多规则 OR、PID/TID/Tag 过滤、大小写一致性、复杂组合、多文件一致性。
+
 ## 使用指南
 
 ### 1. 加载日志文件
@@ -316,13 +332,14 @@ MM-DD HH:MM:SS.mmm  PID  TID LEVEL TAG: MESSAGE
 
 - **⚡ rg 批量并行扫描**：单文件/多文件使用 ripgrep 子进程批量扫描，97 文件从 106s 降至 3~5s
 - **💾 搜索结果缓存**：匹配行号列表自动缓存，翻页/改 limit 直接从缓存切片，翻页 ~0.01s（~1000x 加速）
-- **✅ rg 结果正确性修复**：修复 AND 语义、keyword post-filter 过滤失效、行号解析错误
+- **✅ rg 结果正确性修复**：修复 AND 语义、keyword post-filter 过滤失效、indexer 丢失首行、rg 大小写不敏感
 - **🎯 搜索引擎选择**：🤖智能 / ⚡RG / 🐍Python 三引擎可选手动切换，切换即时保存偏好
 - **🧹 清理日志目录**：`python main.py --clearlog` 一键清理运行日志，不影响过滤规则
 - **🚀 全量搜索短路**：无过滤条件时 5ms 返回全量数据，避免不必要的引擎开销
 - **🔧 缓存隔离修复**：缓存 key 加入 engine_mode 和文件 generation 计数，文件变更/切引擎自动重新搜索
 - **📦 rg.exe 外置+提交**：rg.exe 不打包进 exe 减小体积，提交到仓库开箱即用
 - **🐛 前端级别过滤修复**：全选 4 级别视为"不限"，取消规则后正确发送无过滤请求
+- **🧪 正式测试套件**：`tests/test_engine.py` 12 组 55+ 断言，覆盖所有过滤组合，修改后必须通过测试
 
 ## v7.0 更新日志
 
@@ -339,7 +356,11 @@ logs_handler/
 ├── app.py               # FastAPI 应用工厂 + 引擎配置API + 路由注册
 ├── build.spec           # PyInstaller 打包配置
 ├── requirements.txt     # 依赖清单
+├── build.bat            # 构建脚本：自动测试→打包exe
 ├── ForAi/               # 测试脚本/日志（开发辅助，不提交）
+├── tests/
+│   ├── __init__.py
+│   └── test_engine.py   # 引擎一致性测试（12组55+断言）
 ├── engine/
 │   ├── parser.py        # 正则解析单行日志
 │   ├── indexer.py       # mmap 行偏移索引 + 二分时间查找 + 批量读取
