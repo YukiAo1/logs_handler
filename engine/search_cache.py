@@ -2,7 +2,7 @@ import hashlib
 import json
 
 _search_cache: dict[str, list] = {}
-_cache_key_prefix: str = ''
+_file_generation: int = 0
 
 
 def _make_key(
@@ -19,7 +19,7 @@ def _make_key(
 ) -> str:
     raw = json.dumps(
         (rule_pattern, rule_patterns, levels, pid, tid,
-         tag_substr, time_start, time_end, keyword, engine_mode),
+         tag_substr, time_start, time_end, keyword, engine_mode, _file_generation),
         sort_keys=True, default=str
     )
     return hashlib.md5(raw.encode()).hexdigest()
@@ -34,6 +34,8 @@ def set_cache(key: str, matches: list):
 
 
 def invalidate():
+    global _file_generation
+    _file_generation += 1
     _search_cache.clear()
 
 

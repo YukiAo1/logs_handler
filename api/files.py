@@ -12,6 +12,7 @@ from storage.models import now_iso
 from engine.indexer import FileIndex, index_file, index_files_parallel, read_raw_line
 from engine.parser import parse_line
 from engine.logger import search_logger
+from engine.search_cache import invalidate as invalidate_cache
 from config import APP_DIR
 
 router = APIRouter(prefix='/api/files', tags=['files'])
@@ -65,6 +66,7 @@ async def open_files(body: OpenRequest):
         for idx in _file_indexes.values():
             idx.close()
         _file_indexes.clear()
+        invalidate_cache()
 
     resolved = _resolve_paths(body.paths)
     if not resolved:
@@ -78,6 +80,7 @@ async def open_files(body: OpenRequest):
         new_indexes = await asyncio.to_thread(index_files_parallel, new_paths, _loading_progress)
         _file_indexes.update(new_indexes)
         _loading_state = {'running': False, 'current': len(new_indexes), 'total': len(new_paths), 'path': ''}
+        invalidate_cache()
 
     total_lines = sum(_file_indexes[p].total_lines for p in resolved if p in _file_indexes)
     elapsed = time.perf_counter() - t0
@@ -159,6 +162,7 @@ def close_files(body: CloseRequest = CloseRequest()):
             if p in _file_indexes:
                 _file_indexes[p].close()
                 del _file_indexes[p]
+    invalidate_cache()
     return {'ok': True, 'remaining': len(_file_indexes)}
 
 
