@@ -43,6 +43,7 @@ def index_file(path: str) -> FileIndex:
         raise
 
     offsets = array('Q')
+    offsets.append(0)  # first line starts at position 0
     pos = 0
     while pos < file_size:
         idx = mm.find(b'\n', pos)

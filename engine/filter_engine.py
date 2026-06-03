@@ -491,6 +491,23 @@ def search(
         set_cache(cache_key, raw)
         return results, total, 'python'
 
+    # rg has no pattern to search for pure level/meta filters without rule/keyword
+    no_pattern = not rule_pattern and not rule_patterns and not keyword
+    pure_meta = has_level or has_time or bool(tag_substr or pid is not None or tid is not None)
+    if no_pattern and pure_meta and engine_mode == 'rg':
+        results, total, _, raw = _search_via_python(
+            indexes, rule_pattern, rule_patterns, levels,
+            pid, tid, tag_substr, time_start, time_end,
+            keyword, offset, limit, 'python',
+        )
+        elapsed = time.perf_counter() - t_start
+        query_logger.info(
+            f"pure_meta_rg | rows={total_lines} mb={mb:.0f} "
+            f"levels={levels or 'all'} "
+            f"total_ms={elapsed*1000:.0f}")
+        set_cache(cache_key, raw)
+        return results, total, 'rg'
+
     meta = (
         f"rows={total_lines} mb={mb:.0f} offset={offset} limit={limit} "
         f"levels={levels or 'all'} pid={pid} tid={tid} tag={tag_substr or ''} "

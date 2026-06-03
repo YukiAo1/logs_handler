@@ -192,4 +192,6 @@ def build_rg_pattern(
     if not parts:
         return ''
 
-    return '|'.join(f'({p})' for p in parts) if len(parts) > 1 else parts[0]
+    # Case-insensitive flag matches python's re.IGNORECASE
+    combined = '|'.join(f'({p})' for p in parts) if len(parts) > 1 else parts[0]
+    return f'(?i){combined}'
