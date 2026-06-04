@@ -390,7 +390,7 @@ def _search_via_python(
             }
             for fut in as_completed(futures):
                 all_matches.extend(fut.result())
-        all_matches.sort(key=lambda x: (x[1], x[0]))
+        all_matches.sort(key=lambda x: (x[0], x[1]))
     else:
         all_matches = []
         for file_idx, index in enumerate(indexes):
